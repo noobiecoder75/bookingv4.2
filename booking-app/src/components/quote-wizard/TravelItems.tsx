@@ -10,7 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, getTravelItemColor } from '@/lib/utils';
-import { Plane, Hotel, MapPin, Car, Calendar as CalendarIcon } from 'lucide-react';
+import { Plane, Hotel, MapPin, Car, Calendar as CalendarIcon, X } from 'lucide-react';
+import { FlightBuilder } from '@/components/item-builders/FlightBuilder';
+import { HotelBuilder } from '@/components/item-builders/HotelBuilder';
+import { EditItemModal } from '@/components/item-editors/EditItemModal';
+import { QuickEditPopover } from '@/components/item-editors/QuickEditPopover';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 
@@ -29,6 +33,13 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   const [showForm, setShowForm] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
   const [itemType, setItemType] = useState<'flight' | 'hotel' | 'activity' | 'transfer'>('flight');
+  const [showFlightBuilder, setShowFlightBuilder] = useState(false);
+  const [showHotelBuilder, setShowHotelBuilder] = useState(false);
+  
+  // Edit functionality
+  const [editingItem, setEditingItem] = useState<TravelItem | null>(null);
+  const [quickEditItem, setQuickEditItem] = useState<TravelItem | null>(null);
+  const [quickEditPosition, setQuickEditPosition] = useState<{ x: number; y: number } | null>(null);
 
   const currentQuote = useQuoteStore(state => 
     state.quotes.find(q => q.id === quote.id)
@@ -95,20 +106,65 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   }, []);
 
   // Handle event selection (clicking existing event)
-  const handleSelectEvent = useCallback((event: CalendarEvent) => {
-    if (confirm(`Remove ${event.title}?`)) {
-      removeItemFromQuote(quote.id, event.id);
-    }
-  }, [removeItemFromQuote, quote.id]);
+  const handleSelectEvent = useCallback((event: CalendarEvent, e: React.SyntheticEvent) => {
+    const item = currentQuote.items.find(item => item.id === event.id);
+    if (!item) return;
+
+    // Get click position for popover
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    const position = {
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+    };
+
+    setQuickEditItem(item);
+    setQuickEditPosition(position);
+  }, [currentQuote.items]);
 
   // Handle event drag and drop
   const handleEventDrop = useCallback(({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
     const item = currentQuote.items.find(item => item.id === event.id);
     if (item) {
+      // Preserve the original time when moving dates
+      const originalStart = new Date(item.startDate);
+      const originalEnd = item.endDate ? new Date(item.endDate) : null;
+      
+      // Calculate the time difference
+      const timeDiff = end.getTime() - start.getTime();
+      
+      // Apply the same time to the new date
+      const newStart = new Date(start);
+      newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+      
+      const newEnd = originalEnd ? new Date(newStart.getTime() + timeDiff) : undefined;
+      
       updateItemInQuote(quote.id, event.id, {
-        startDate: start.toISOString().split('T')[0],
-        endDate: end.toISOString().split('T')[0],
+        startDate: newStart.toISOString(),
+        endDate: newEnd ? newEnd.toISOString() : undefined,
       });
+      
+      // Show a brief confirmation
+      const itemName = item.name;
+      const newDate = newStart.toLocaleDateString();
+      const newTime = newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      // You could add a toast notification here
+      console.log(`${itemName} moved to ${newDate} at ${newTime}`);
+    }
+  }, [currentQuote.items, quote.id, updateItemInQuote]);
+
+  // Handle event resize
+  const handleEventResize = useCallback(({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
+    const item = currentQuote.items.find(item => item.id === event.id);
+    if (item) {
+      updateItemInQuote(quote.id, event.id, {
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+      });
+      
+      // Show resize confirmation
+      const duration = Math.round((end.getTime() - start.getTime()) / (1000 * 60)); // minutes
+      console.log(`${item.name} duration changed to ${duration} minutes`);
     }
   }, [currentQuote.items, quote.id, updateItemInQuote]);
 
@@ -139,18 +195,58 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     setSelectedSlot(null);
   };
 
+  // Handle quick edit save
+  const handleQuickEditSave = (updates: Partial<TravelItem>) => {
+    if (!quickEditItem) return;
+    updateItemInQuote(quote.id, quickEditItem.id, updates);
+    setQuickEditItem(null);
+    setQuickEditPosition(null);
+  };
+
+  // Handle full edit save
+  const handleFullEditSave = (updates: Partial<TravelItem>) => {
+    if (!editingItem) return;
+    updateItemInQuote(quote.id, editingItem.id, updates);
+    setEditingItem(null);
+  };
+
+  // Handle item deletion
+  const handleDeleteItem = () => {
+    if (!editingItem) return;
+    removeItemFromQuote(quote.id, editingItem.id);
+    setEditingItem(null);
+  };
+
   // Custom event component
-  const EventComponent = ({ event }: { event: CalendarEvent }) => (
-    <div className="flex items-center space-x-1">
-      <div className="w-2 h-2 rounded-full bg-white opacity-80" />
-      <span className="truncate text-xs font-medium">{event.title}</span>
-      {event.resource?.details?.price && (
-        <span className="text-xs opacity-75">
-          ${event.resource.details.price}
-        </span>
-      )}
-    </div>
-  );
+  const EventComponent = ({ event }: { event: CalendarEvent }) => {
+    const item = currentQuote.items.find(item => item.id === event.id);
+    if (!item) return <div>{event.title}</div>;
+    
+    return (
+      <div className="relative group h-full">
+        <div className="flex items-center space-x-1 h-full p-1">
+          <div className="w-2 h-2 rounded-full bg-white opacity-80 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="truncate text-xs font-medium">{event.title}</div>
+            <div className="truncate text-xs opacity-75">
+              {formatCurrency(item.price * item.quantity)}
+            </div>
+          </div>
+        </div>
+        
+        {/* Hover overlay with edit hint */}
+        <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <span className="text-xs text-white font-medium bg-black bg-opacity-50 px-2 py-1 rounded">
+            Click to edit
+          </span>
+        </div>
+        
+        {/* Resize handles for better UX */}
+        <div className="absolute top-0 left-0 w-1 h-full bg-white opacity-0 group-hover:opacity-50 cursor-ew-resize" />
+        <div className="absolute top-0 right-0 w-1 h-full bg-white opacity-0 group-hover:opacity-50 cursor-ew-resize" />
+      </div>
+    );
+  };
 
   // Floating action buttons for quick add
   const getItemIcon = (type: string) => {
@@ -172,7 +268,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
             Travel Timeline
           </h2>
           <p className="text-gray-600">
-            Click on the calendar to add flights, hotels, activities, and transfers
+            <span className="font-medium">Interactive Calendar:</span> Click to add • Drag to move • Resize to adjust duration • Click items to edit
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -186,7 +282,25 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
       {/* Quick Add Buttons */}
       <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg border">
         <span className="text-sm font-medium text-gray-700">Quick Add:</span>
-        {(['flight', 'hotel', 'activity', 'transfer'] as const).map((type) => (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowFlightBuilder(true)}
+          className="flex items-center space-x-1"
+        >
+          <Plane className="w-4 h-4" />
+          <span>Flight</span>
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowHotelBuilder(true)}
+          className="flex items-center space-x-1"
+        >
+          <Hotel className="w-4 h-4" />
+          <span>Hotel</span>
+        </Button>
+        {(['activity', 'transfer'] as const).map((type) => (
           <Button
             key={type}
             size="sm"
@@ -225,7 +339,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           onSelectSlot={handleSelectSlot}
           onSelectEvent={handleSelectEvent}
           onEventDrop={handleEventDrop}
-          onEventResize={handleEventDrop}
+          onEventResize={handleEventResize}
           selectable
           resizable
           eventPropGetter={eventStyleGetter}
@@ -236,9 +350,16 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           defaultView="week"
           min={moment().hour(6).minute(0).toDate()}
           max={moment().hour(22).minute(0).toDate()}
-          step={60}
-          timeslots={1}
+          step={30}
+          timeslots={2}
           showMultiDayTimes
+          popup
+          popupOffset={{ x: 10, y: 10 }}
+          tooltipAccessor={(event: CalendarEvent) => {
+            const item = currentQuote.items.find(item => item.id === event.id);
+            if (!item) return event.title;
+            return `${event.title}\n${formatCurrency(item.price * item.quantity)}\nClick to edit • Drag to move`;
+          }}
         />
       </div>
 
@@ -250,14 +371,31 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           {currentQuote.items.length > 0 ? (
             <div className="space-y-2">
               {currentQuote.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between text-sm">
+                <div 
+                  key={item.id} 
+                  className="flex items-center justify-between text-sm p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => setEditingItem(item)}
+                >
                   <div className="flex items-center space-x-2">
                     <div style={{ color: getTravelItemColor(item.type) }}>
                       {getItemIcon(item.type)}
                     </div>
                     <span className="truncate">{item.name}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
+                    <button 
+                      className="text-gray-400 hover:text-gray-600 p-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Remove ${item.name}?`)) {
+                          removeItemFromQuote(quote.id, item.id);
+                        }
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -283,7 +421,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
       </div>
 
       {/* Add Item Form Modal */}
-      {showForm && selectedSlot && (
+      {showForm && selectedSlot && itemType !== 'flight' && itemType !== 'hotel' && (
         <QuickItemForm
           itemType={itemType}
           selectedSlot={selectedSlot}
@@ -292,6 +430,56 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
             setShowForm(false);
             setSelectedSlot(null);
           }}
+        />
+      )}
+
+      {/* Flight Builder Modal */}
+      {showFlightBuilder && (
+        <FlightBuilder
+          onSubmit={(flightData) => {
+            handleAddItem(flightData);
+            setShowFlightBuilder(false);
+          }}
+          onCancel={() => setShowFlightBuilder(false)}
+        />
+      )}
+
+      {/* Hotel Builder Modal */}
+      {showHotelBuilder && (
+        <HotelBuilder
+          onSubmit={(hotelData) => {
+            handleAddItem(hotelData);
+            setShowHotelBuilder(false);
+          }}
+          onCancel={() => setShowHotelBuilder(false)}
+        />
+      )}
+
+      {/* Quick Edit Popover */}
+      {quickEditItem && quickEditPosition && (
+        <QuickEditPopover
+          item={quickEditItem}
+          position={quickEditPosition}
+          onSave={handleQuickEditSave}
+          onCancel={() => {
+            setQuickEditItem(null);
+            setQuickEditPosition(null);
+          }}
+          onFullEdit={() => {
+            setEditingItem(quickEditItem);
+            setQuickEditItem(null);
+            setQuickEditPosition(null);
+          }}
+        />
+      )}
+
+      {/* Full Edit Modal */}
+      {editingItem && (
+        <EditItemModal
+          item={editingItem}
+          onSave={handleFullEditSave}
+          onDelete={handleDeleteItem}
+          onCancel={() => setEditingItem(null)}
         />
       )}
     </div>

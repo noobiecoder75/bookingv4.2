@@ -18,7 +18,10 @@ import {
   Plane,
   Hotel,
   MapPin,
-  Car
+  Car,
+  Send,
+  ExternalLink,
+  Eye
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -46,7 +49,7 @@ interface QuoteCardProps {
 
 export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: QuoteCardProps) {
   const { getContactById } = useContactStore();
-  const { updateQuoteStatus, duplicateQuote, deleteQuote } = useQuoteStore();
+  const { updateQuoteStatus, duplicateQuote, deleteQuote, sendQuoteToClient, generatePreviewLink } = useQuoteStore();
   
   const contact = getContactById(quote.contactId);
   
@@ -94,6 +97,37 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
     }
   };
 
+  const handleSendToClient = async () => {
+    const success = await sendQuoteToClient(quote.id);
+    if (success) {
+      console.log('Quote sent successfully');
+      // You could add a toast notification here
+    } else {
+      console.error('Failed to send quote');
+      // You could add error handling here
+    }
+  };
+
+  const handlePreview = () => {
+    const previewLink = generatePreviewLink(quote.id);
+    if (previewLink) {
+      window.open(previewLink, '_blank');
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const previewLink = generatePreviewLink(quote.id);
+    if (previewLink) {
+      try {
+        await navigator.clipboard.writeText(previewLink);
+        console.log('Link copied to clipboard');
+        // You could add a toast notification here
+      } catch (error) {
+        console.error('Failed to copy link:', error);
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
       {/* Header */}
@@ -130,11 +164,24 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
                   Edit Quote
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSendToClient}>
+                <Send className="w-4 h-4 mr-2" />
+                Send to Client
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePreview}>
+                <Eye className="w-4 h-4 mr-2" />
+                Preview Client View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCopyLink}>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Copy Client Link
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDuplicate}>
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicate
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem 
                 onClick={handleDelete}
                 className="text-red-600 hover:text-red-700"

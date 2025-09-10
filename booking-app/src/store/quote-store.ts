@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TravelQuote, TravelItem, CalendarEvent } from '@/types';
+import { generateClientQuoteLink, generatePreviewLink } from '@/lib/client-links';
 
 interface QuoteStats {
   totalQuotes: number;
@@ -33,6 +34,10 @@ interface QuoteStore {
   duplicateQuote: (quoteId: string) => string | null;
   updateQuoteStatus: (quoteId: string, status: TravelQuote['status']) => void;
   searchQuotes: (query: string) => TravelQuote[];
+  // Client link methods
+  generateClientLink: (quoteId: string) => string | null;
+  generatePreviewLink: (quoteId: string) => string | null;
+  sendQuoteToClient: (quoteId: string) => Promise<boolean>;
 }
 
 export const useQuoteStore = create<QuoteStore>()(
@@ -239,6 +244,44 @@ export const useQuoteStore = create<QuoteStore>()(
           quote.title.toLowerCase().includes(lowercaseQuery) ||
           quote.items.some(item => item.name.toLowerCase().includes(lowercaseQuery))
         );
+      },
+
+      // Client link methods
+      generateClientLink: (quoteId) => {
+        const quote = get().getQuoteById(quoteId);
+        if (!quote) return null;
+        return generateClientQuoteLink(quote);
+      },
+
+      generatePreviewLink: (quoteId) => {
+        const quote = get().getQuoteById(quoteId);
+        if (!quote) return null;
+        return generatePreviewLink(quote);
+      },
+
+      sendQuoteToClient: async (quoteId) => {
+        const quote = get().getQuoteById(quoteId);
+        if (!quote) return false;
+        
+        try {
+          // Update status to sent
+          get().updateQuoteStatus(quoteId, 'sent');
+          
+          // In a real implementation, this would:
+          // 1. Generate a secure client link
+          // 2. Send an email to the client with the link
+          // 3. Log the action for audit purposes
+          
+          console.log('Quote sent to client:', {
+            quoteId,
+            clientLink: generateClientQuoteLink(quote)
+          });
+          
+          return true;
+        } catch (error) {
+          console.error('Failed to send quote to client:', error);
+          return false;
+        }
       },
     }),
     {

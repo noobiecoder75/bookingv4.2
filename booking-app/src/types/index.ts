@@ -47,7 +47,7 @@ export interface TravelItem {
   endDate?: string;
   price: number;
   quantity: number;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
 }
 
 export interface FlightDetails {
@@ -92,6 +92,6 @@ export interface CalendarEvent {
     type: 'flight' | 'hotel' | 'activity' | 'transfer';
     contactId: string;
     quoteId: string;
-    details: Record<string, any>;
+    details: Record<string, unknown>;
   };
 }
