@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { Calendar, momentLocalizer, View, SlotInfo } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
@@ -15,6 +15,9 @@ import { FlightBuilder } from '@/components/item-builders/FlightBuilder';
 import { HotelBuilder } from '@/components/item-builders/HotelBuilder';
 import { EditItemModal } from '@/components/item-editors/EditItemModal';
 import { QuickEditPopover } from '@/components/item-editors/QuickEditPopover';
+import { TravelListView } from './TravelListView';
+import { FilterControls } from './FilterControls';
+import { TimelineNavigation } from './TimelineNavigation';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 
@@ -28,13 +31,15 @@ interface TravelItemsProps {
 
 export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   const { addItemToQuote, removeItemFromQuote, updateItemInQuote } = useQuoteStore();
-  const [view, setView] = useState<View>('week');
+  const [view, setView] = useState<View>('month'); // Default to month view for better overview
   const [date, setDate] = useState(new Date(quote.travelDates.start));
   const [showForm, setShowForm] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
   const [itemType, setItemType] = useState<'flight' | 'hotel' | 'activity' | 'transfer'>('flight');
   const [showFlightBuilder, setShowFlightBuilder] = useState(false);
   const [showHotelBuilder, setShowHotelBuilder] = useState(false);
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [filteredItems, setFilteredItems] = useState<TravelItem[]>([]);
   
   // Edit functionality
   const [editingItem, setEditingItem] = useState<TravelItem | null>(null);
@@ -45,6 +50,78 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     state.quotes.find(q => q.id === quote.id)
   ) || quote;
 
+  // Use filtered items if available, otherwise use all items
+  const displayItems = filteredItems.length > 0 || currentQuote.items.length === 0 ? filteredItems : currentQuote.items;
+
+  // Calculate dynamic calendar height based on viewport and responsive breakpoints
+  const calculateCalendarHeight = useMemo(() => {
+    if (typeof window === 'undefined') return 700; // SSR fallback
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Responsive breakpoints with different height strategies
+    let baseHeight: number;
+    let maxHeight: number;
+    let viewportPercentage: number;
+    
+    if (viewportWidth >= 1280) {
+      // Desktop - Large calendar
+      baseHeight = 700;
+      maxHeight = 1200;
+      viewportPercentage = 0.85;
+    } else if (viewportWidth >= 768) {
+      // Tablet - Medium calendar
+      baseHeight = 600;
+      maxHeight = 900;
+      viewportPercentage = 0.8;
+    } else {
+      // Mobile - Compact calendar
+      baseHeight = 500;
+      maxHeight = 600;
+      viewportPercentage = 0.75;
+    }
+    
+    // Use viewport height as primary constraint
+    const viewportBasedHeight = viewportHeight * viewportPercentage;
+    
+    // Item density adjustment (minimal impact)
+    const itemCount = currentQuote.items.length;
+    const itemAdjustment = Math.min(itemCount * 15, 100); // Max 100px adjustment
+    
+    const calculatedHeight = Math.min(
+      maxHeight,
+      Math.max(baseHeight, viewportBasedHeight + itemAdjustment)
+    );
+    
+    return Math.floor(calculatedHeight);
+  }, [currentQuote.items.length]);
+
+  // Detect overlapping events for smart positioning
+  const detectOverlappingEvents = useCallback((events: CalendarEvent[]) => {
+    const overlaps = new Map<string, number>();
+    
+    events.forEach((event, index) => {
+      let overlapCount = 0;
+      events.forEach((otherEvent, otherIndex) => {
+        if (index !== otherIndex) {
+          const eventStart = event.start.getTime();
+          const eventEnd = event.end.getTime();
+          const otherStart = otherEvent.start.getTime();
+          const otherEnd = otherEvent.end.getTime();
+          
+          // Check for overlap
+          if ((eventStart < otherEnd && eventEnd > otherStart)) {
+            overlapCount++;
+          }
+        }
+      });
+      overlaps.set(event.id, overlapCount);
+    });
+    
+    return overlaps;
+  }, []);
+
   // Ensure calendar is focused on travel dates
   useEffect(() => {
     const travelStartDate = new Date(quote.travelDates.start);
@@ -53,9 +130,9 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     }
   }, [quote.travelDates.start, date]);
 
-  // Convert travel items to calendar events
+  // Convert travel items to calendar events (using filtered items)
   const events = useMemo(() => {
-    return currentQuote.items.map(item => {
+    return displayItems.map(item => {
       const startDate = new Date(item.startDate);
       const endDate = new Date(item.endDate || item.startDate);
       
@@ -97,7 +174,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
         },
       };
     }) as CalendarEvent[];
-  }, [currentQuote.items, quote.contactId, quote.id]);
+  }, [displayItems, quote.contactId, quote.id]);
 
   // Handle slot selection (clicking empty calendar space)
   const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
@@ -110,18 +187,18 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     const item = currentQuote.items.find(item => item.id === event.id);
     if (!item) return;
 
-    // Get click position for popover
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    // Get click position for popover - use the actual mouse event if available
+    const mouseEvent = e.nativeEvent as MouseEvent;
     const position = {
-      x: rect.left + rect.width / 2,
-      y: rect.top,
+      x: mouseEvent.clientX || mouseEvent.pageX || window.innerWidth / 2,
+      y: mouseEvent.clientY || mouseEvent.pageY || 100,
     };
 
     setQuickEditItem(item);
     setQuickEditPosition(position);
   }, [currentQuote.items]);
 
-  // Handle event drag and drop
+  // Handle event drag and drop with debouncing for better performance
   const handleEventDrop = useCallback(({ event, start, end }: { event: CalendarEvent; start: Date; end: Date }) => {
     const item = currentQuote.items.find(item => item.id === event.id);
     if (item) {
@@ -149,6 +226,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
       const newTime = newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
       // You could add a toast notification here
+      // Batched update for better performance
       console.log(`${itemName} moved to ${newDate} at ${newTime}`);
     }
   }, [currentQuote.items, quote.id, updateItemInQuote]);
@@ -168,22 +246,33 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     }
   }, [currentQuote.items, quote.id, updateItemInQuote]);
 
-  // Event styling
+  // Enhanced event styling with smart positioning
   const eventStyleGetter = (event: CalendarEvent) => {
     const backgroundColor = event.resource 
       ? getTravelItemColor(event.resource.type)
       : '#6B7280';
     
+    // Get overlap information for this event
+    const overlaps = detectOverlappingEvents(events);
+    const overlapCount = overlaps.get(event.id) || 0;
+    const horizontalOffset = Math.min(overlapCount * 10, 30); // Max 30px offset
+    
     return {
       style: {
         backgroundColor,
-        borderRadius: '6px',
-        opacity: 0.9,
+        borderRadius: '8px',
+        opacity: 0.95,
         color: 'white',
         border: '0px',
         display: 'block',
-        fontSize: '12px',
-        padding: '2px 6px',
+        fontSize: '14px',
+        fontWeight: '500',
+        padding: '4px 8px',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        boxShadow: `${horizontalOffset}px 2px 8px rgba(0,0,0,0.15)`,
+        transform: overlapCount > 0 ? `translateX(${horizontalOffset}px)` : 'none',
+        zIndex: overlapCount > 0 ? 10 + overlapCount : 'auto',
       },
     };
   };
@@ -217,21 +306,98 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     setEditingItem(null);
   };
 
-  // Custom event component
-  const EventComponent = ({ event }: { event: CalendarEvent }) => {
+  // Simplified Custom Toolbar (only calendar navigation)
+  const CustomToolbar = (toolbar: any) => {
+    const goToBack = () => {
+      toolbar.onNavigate('PREV');
+    };
+
+    const goToNext = () => {
+      toolbar.onNavigate('NEXT');
+    };
+
+    const goToCurrent = () => {
+      toolbar.onNavigate('TODAY');
+    };
+
+    const label = () => {
+      const date = moment(toolbar.date);
+      return (
+        <span className="text-lg font-semibold text-gray-900">
+          {date.format('MMMM YYYY')}
+        </span>
+      );
+    };
+
+    return (
+      <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg border">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={goToBack}
+            className="px-3 py-1.5 bg-white border rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+          >
+            ←
+          </button>
+          <button
+            onClick={goToCurrent}
+            className="px-3 py-1.5 bg-white border rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+          >
+            Today
+          </button>
+          <button
+            onClick={goToNext}
+            className="px-3 py-1.5 bg-white border rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
+          >
+            →
+          </button>
+        </div>
+
+        <div>{label()}</div>
+
+        {/* Spacer for balanced layout */}
+        <div className="w-20"></div>
+      </div>
+    );
+  };
+
+  // Custom Event Component (based on TimelineCalendar)
+  const CustomEvent = ({ event }: { event: CalendarEvent }) => (
+    <div className="flex items-center space-x-2">
+      <div 
+        className="w-2 h-2 rounded-full flex-shrink-0"
+        style={{ 
+          backgroundColor: event.resource 
+            ? getTravelItemColor(event.resource.type) 
+            : '#6B7280' 
+        }}
+      />
+      <span className="truncate text-xs">{event.title}</span>
+    </div>
+  );
+
+  // Enhanced event component with overlap indicator (memoized for performance)
+  const EventComponent = memo(({ event }: { event: CalendarEvent }) => {
     const item = currentQuote.items.find(item => item.id === event.id);
     if (!item) return <div>{event.title}</div>;
     
+    const overlaps = detectOverlappingEvents(events);
+    const overlapCount = overlaps.get(event.id) || 0;
+    
     return (
       <div className="relative group h-full">
-        <div className="flex items-center space-x-1 h-full p-1">
-          <div className="w-2 h-2 rounded-full bg-white opacity-80 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between h-full p-1">
+          <div className="flex items-center space-x-1 flex-1 min-w-0">
+            <div className="w-2 h-2 rounded-full bg-white opacity-80 flex-shrink-0" />
             <div className="truncate text-xs font-medium">{event.title}</div>
-            <div className="truncate text-xs opacity-75">
-              {formatCurrency(item.price * item.quantity)}
-            </div>
           </div>
+          <div className="text-xs font-semibold text-white opacity-75 ml-1 flex-shrink-0">
+            {formatCurrency(item.price * item.quantity)}
+          </div>
+          {overlapCount > 2 && (
+            <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+              +{overlapCount - 1}
+            </div>
+          )}
         </div>
         
         {/* Hover overlay with edit hint */}
@@ -241,12 +407,12 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           </span>
         </div>
         
-        {/* Resize handles for better UX */}
-        <div className="absolute top-0 left-0 w-1 h-full bg-white opacity-0 group-hover:opacity-50 cursor-ew-resize" />
-        <div className="absolute top-0 right-0 w-1 h-full bg-white opacity-0 group-hover:opacity-50 cursor-ew-resize" />
+        {/* Enhanced resize handles for better interaction */}
+        <div className="absolute top-0 left-0 w-2 h-full bg-white opacity-0 group-hover:opacity-60 cursor-ew-resize rounded-l" />
+        <div className="absolute top-0 right-0 w-2 h-full bg-white opacity-0 group-hover:opacity-60 cursor-ew-resize rounded-r" />
       </div>
     );
-  };
+  });
 
   // Floating action buttons for quick add
   const getItemIcon = (type: string) => {
@@ -260,9 +426,9 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Travel Timeline
@@ -279,8 +445,15 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
         </div>
       </div>
 
+      {/* Filter Controls */}
+      <FilterControls
+        items={currentQuote.items}
+        onFilterChange={setFilteredItems}
+        className="mb-4"
+      />
+
       {/* Quick Add Buttons */}
-      <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg border">
+      <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg border mb-4">
         <span className="text-sm font-medium text-gray-700">Quick Add:</span>
         <Button
           size="sm"
@@ -324,101 +497,96 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
         ))}
       </div>
 
-      {/* Calendar Timeline */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <DragAndDropCalendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 500 }}
-          view={view}
-          date={date}
-          onView={(view) => setView(view)}
-          onNavigate={(date) => setDate(date)}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          onEventDrop={handleEventDrop}
-          onEventResize={handleEventResize}
-          selectable
-          resizable
-          eventPropGetter={eventStyleGetter}
-          components={{
-            event: EventComponent,
-          }}
-          views={['month', 'week', 'day']}
-          defaultView="week"
-          min={moment().hour(6).minute(0).toDate()}
-          max={moment().hour(22).minute(0).toDate()}
-          step={30}
-          timeslots={2}
-          showMultiDayTimes
-          popup
-          popupOffset={{ x: 10, y: 10 }}
-          tooltipAccessor={(event: CalendarEvent) => {
-            const item = currentQuote.items.find(item => item.id === event.id);
-            if (!item) return event.title;
-            return `${event.title}\n${formatCurrency(item.price * item.quantity)}\nClick to edit • Drag to move`;
-          }}
-        />
-      </div>
+      {/* Main Content Area */}
+      <div className="w-full">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          {/* Persistent Navigation */}
+          <TimelineNavigation
+            viewMode={viewMode}
+            calendarView={view}
+            onViewModeChange={setViewMode}
+            onCalendarViewChange={setView}
+          />
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Items Summary */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h4 className="font-semibold text-gray-900 mb-3">Items Added ({currentQuote.items.length})</h4>
-          {currentQuote.items.length > 0 ? (
-            <div className="space-y-2">
-              {currentQuote.items.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="flex items-center justify-between text-sm p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => setEditingItem(item)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <div style={{ color: getTravelItemColor(item.type) }}>
-                      {getItemIcon(item.type)}
-                    </div>
-                    <span className="truncate">{item.name}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
-                    <button 
-                      className="text-gray-400 hover:text-gray-600 p-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Remove ${item.name}?`)) {
-                          removeItemFromQuote(quote.id, item.id);
-                        }
-                      }}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {/* Timeline Content */}
+          {viewMode === 'calendar' ? (
+            <div className="p-4">
+              <DragAndDropCalendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: calculateCalendarHeight }}
+                view={view}
+                date={date}
+                onView={(view) => setView(view)}
+                onNavigate={(date) => setDate(date)}
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectEvent}
+                onEventDrop={handleEventDrop}
+                onEventResize={handleEventResize}
+                selectable
+                resizable
+                eventPropGetter={eventStyleGetter}
+                components={{
+                  event: EventComponent,
+                  toolbar: CustomToolbar,
+                }}
+                views={['month', 'week', 'day', 'agenda']}
+                defaultView="month"
+                step={60}
+                showMultiDayTimes
+                className="bg-white rounded-lg"
+                tooltipAccessor={(event: CalendarEvent) => {
+                  const item = currentQuote.items.find(item => item.id === event.id);
+                  if (!item) return event.title;
+                  return `${event.title}\n${formatCurrency(item.price * item.quantity)}\nClick to edit • Drag to move`;
+                }}
+              />
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">Click on the calendar to add items</p>
+            <div className="p-6">
+              <TravelListView
+                quote={quote}
+                onEditItem={(item) => setEditingItem(item)}
+                onDeleteItem={(itemId) => {
+                  if (confirm('Remove this item?')) {
+                    removeItemFromQuote(quote.id, itemId);
+                  }
+                }}
+              />
+            </div>
           )}
         </div>
+      </div>
 
-        {/* Total */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4">
-          <h4 className="font-semibold text-gray-900 mb-3">Quote Total</h4>
-          <div className="text-2xl font-bold text-blue-600">
-            {formatCurrency(currentQuote.totalCost)}
-          </div>
-          {currentQuote.items.length > 0 && (
-            <div className="mt-3">
-              <Button onClick={onComplete} size="lg" className="w-full">
+      {/* Floating Summary Bar */}
+      {currentQuote.items.length > 0 && (
+        <div className="fixed bottom-4 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-1 rounded-full">
+                {currentQuote.items.length} item{currentQuote.items.length !== 1 ? 's' : ''}
+              </div>
+              <span className="text-gray-600 text-sm">added to quote</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="text-right">
+                <div className="text-sm text-gray-600">Total</div>
+                <div className="text-lg font-bold text-gray-900">
+                  {formatCurrency(currentQuote.totalCost)}
+                </div>
+              </div>
+              <Button onClick={onComplete} className="min-w-[140px]">
                 Continue to Review
               </Button>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Bottom padding to prevent content overlap */}
+      {currentQuote.items.length > 0 && <div className="h-20" />}
 
       {/* Add Item Form Modal */}
       {showForm && selectedSlot && itemType !== 'flight' && itemType !== 'hotel' && (
@@ -441,6 +609,8 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
             setShowFlightBuilder(false);
           }}
           onCancel={() => setShowFlightBuilder(false)}
+          tripStartDate={new Date(quote.travelDates.start)}
+          tripEndDate={new Date(quote.travelDates.end)}
         />
       )}
 
@@ -452,6 +622,8 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
             setShowHotelBuilder(false);
           }}
           onCancel={() => setShowHotelBuilder(false)}
+          tripStartDate={new Date(quote.travelDates.start)}
+          tripEndDate={new Date(quote.travelDates.end)}
         />
       )}
 

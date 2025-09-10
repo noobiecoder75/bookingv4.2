@@ -108,16 +108,29 @@ export function QuickEditPopover({
     }
   };
 
+  // Calculate safe position within viewport
+  const safePosition = {
+    left: Math.max(10, Math.min(position.x - 140, window.innerWidth - 290)), // Center horizontally, keep in bounds
+    top: Math.max(10, position.y - 200), // Position above the clicked element
+  };
+
   return (
-    <div
-      ref={popoverRef}
-      className="absolute bg-white rounded-lg shadow-lg border border-gray-200 p-4 min-w-[280px] z-50"
-      style={{
-        left: position.x,
-        top: position.y,
-        transform: 'translate(-50%, -100%)',
-      }}
-    >
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 z-40" 
+        onClick={onCancel}
+      />
+      
+      {/* Popover */}
+      <div
+        ref={popoverRef}
+        className="fixed bg-white rounded-lg shadow-xl border border-gray-200 p-4 min-w-[280px] z-50"
+        style={{
+          left: safePosition.left,
+          top: safePosition.top,
+        }}
+      >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h4 className="font-medium text-gray-900">Quick Edit</h4>
@@ -253,6 +266,7 @@ export function QuickEditPopover({
           Done
         </Button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

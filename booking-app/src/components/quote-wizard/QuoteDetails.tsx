@@ -20,6 +20,18 @@ export function QuoteDetails({ contact, quote, onComplete }: QuoteDetailsProps) 
     endDate: '',
   });
 
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Calculate minimum end date (start date + 1 day)
+  const getMinEndDate = () => {
+    if (!formData.startDate) return today;
+    const startDate = new Date(formData.startDate);
+    const nextDay = new Date(startDate);
+    nextDay.setDate(startDate.getDate() + 1);
+    return nextDay.toISOString().split('T')[0];
+  };
+
   // Initialize form with existing quote data if editing
   useEffect(() => {
     if (quote) {
@@ -63,7 +75,22 @@ export function QuoteDetails({ contact, quote, onComplete }: QuoteDetailsProps) 
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newFormData = { ...prev, [field]: value };
+      
+      // If start date is changed and end date is before the new start date, clear end date
+      if (field === 'startDate' && prev.endDate) {
+        const newStartDate = new Date(value);
+        const currentEndDate = new Date(prev.endDate);
+        if (newStartDate >= currentEndDate) {
+          newFormData.endDate = '';
+          setErrors(prevErrors => ({ ...prevErrors, endDate: '' }));
+        }
+      }
+      
+      return newFormData;
+    });
+    
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -103,6 +130,7 @@ export function QuoteDetails({ contact, quote, onComplete }: QuoteDetailsProps) 
               id="startDate"
               type="date"
               value={formData.startDate}
+              min={today}
               onChange={(e) => handleChange('startDate', e.target.value)}
               className={errors.startDate ? 'border-red-500' : ''}
             />
@@ -117,6 +145,8 @@ export function QuoteDetails({ contact, quote, onComplete }: QuoteDetailsProps) 
               id="endDate"
               type="date"
               value={formData.endDate}
+              min={getMinEndDate()}
+              disabled={!formData.startDate}
               onChange={(e) => handleChange('endDate', e.target.value)}
               className={errors.endDate ? 'border-red-500' : ''}
             />

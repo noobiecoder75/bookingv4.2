@@ -39,9 +39,11 @@ interface FlightBuilderProps {
     details: EnhancedFlightDetails & { origin: string; destination: string };
   }) => void;
   onCancel: () => void;
+  tripStartDate?: Date;
+  tripEndDate?: Date;
 }
 
-export function FlightBuilder({ onSubmit, onCancel }: FlightBuilderProps) {
+export function FlightBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }: FlightBuilderProps) {
   const [flightType, setFlightType] = useState<FlightType>('return');
   const [searchResults, setSearchResults] = useState<EnhancedFlightDetails[]>([]);
   const [selectedFlight, setSelectedFlight] = useState<EnhancedFlightDetails | null>(null);
@@ -51,8 +53,8 @@ export function FlightBuilder({ onSubmit, onCancel }: FlightBuilderProps) {
   const [formData, setFormData] = useState({
     origin: '',
     destination: '',
-    departureDate: '',
-    returnDate: '',
+    departureDate: tripStartDate ? tripStartDate.toISOString().split('T')[0] : '',
+    returnDate: tripEndDate ? tripEndDate.toISOString().split('T')[0] : '',
     departureTime: '',
     returnTime: '',
     adults: 1,

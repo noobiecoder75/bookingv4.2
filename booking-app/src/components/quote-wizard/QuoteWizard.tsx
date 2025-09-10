@@ -174,7 +174,7 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Progress Steps */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => (
             <div
@@ -214,18 +214,13 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
         </div>
       </div>
 
-      {/* Step Content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        {renderStepContent()}
-      </div>
-
       {/* Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center space-x-3">
           <Link href="/">
             <Button variant="ghost">
               <Home className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Dashboard
             </Button>
           </Link>
           
@@ -250,6 +245,11 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
           Next
           <ChevronRight className="w-4 h-4 ml-2" />
         </Button>
+      </div>
+
+      {/* Step Content */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {renderStepContent()}
       </div>
     </div>
   );

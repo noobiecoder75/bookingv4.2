@@ -40,9 +40,11 @@ interface HotelBuilderProps {
     details: EnhancedHotelDetails;
   }) => void;
   onCancel: () => void;
+  tripStartDate?: Date;
+  tripEndDate?: Date;
 }
 
-export function HotelBuilder({ onSubmit, onCancel }: HotelBuilderProps) {
+export function HotelBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }: HotelBuilderProps) {
   const [searchResults, setSearchResults] = useState<EnhancedHotelDetails[]>([]);
   const [selectedHotel, setSelectedHotel] = useState<EnhancedHotelDetails | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -50,8 +52,8 @@ export function HotelBuilder({ onSubmit, onCancel }: HotelBuilderProps) {
   
   const [formData, setFormData] = useState({
     destination: '',
-    checkInDate: '',
-    checkOutDate: '',
+    checkInDate: tripStartDate ? tripStartDate.toISOString().split('T')[0] : '',
+    checkOutDate: tripEndDate ? tripEndDate.toISOString().split('T')[0] : '',
     checkInTime: '15:00',
     checkOutTime: '11:00',
     adults: 2,
