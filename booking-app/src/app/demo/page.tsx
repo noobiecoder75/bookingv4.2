@@ -27,35 +27,38 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       <div className="max-w-4xl mx-auto py-12 px-6">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Client Quote System Demo
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Client Quote System
+            <span className="text-gradient block">Demo</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            This demonstrates the client-side quote view where customers can view their travel quotes, 
-            request changes, and make payments online.
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Experience how your clients view travel quotes, request changes, and make payments online
           </p>
         </div>
 
         {quotes.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Quotes Available</h3>
-            <p className="text-gray-600 mb-4">
-              Create a quote using the quote wizard to see the client view demo.
+          <div className="glass-card rounded-2xl p-12 text-center max-w-lg mx-auto">
+            <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Eye className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No Quotes Available</h3>
+            <p className="text-gray-600 mb-6">
+              Create a quote using the quote wizard to see the client view demo in action.
             </p>
-            <Button asChild>
+            <Button asChild size="lg" className="shadow-soft hover-lift">
               <a href="/quote-wizard">Create Your First Quote</a>
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-medium text-blue-900 mb-1">Demo Instructions</h3>
-              <p className="text-blue-800 text-sm">
-                Click &quot;Preview Client View&quot; on any quote below to see how it appears to your customers. 
-                This includes the full quote details, messaging system, and payment functionality.
+          <div className="space-y-8">
+            <div className="glass-card rounded-2xl p-6">
+              <h3 className="font-bold text-gray-900 mb-2">🚀 Demo Instructions</h3>
+              <p className="text-gray-700">
+                Click <strong>"Preview Client View"</strong> on any quote below to experience the client portal. 
+                This includes quote details, messaging system, and secure payment functionality.
               </p>
             </div>
 
@@ -63,7 +66,7 @@ export default function DemoPage() {
               {quotes.map((quote) => {
                 const contact = contacts.find(c => c.id === quote.contactId);
                 return (
-                  <div key={quote.id} className="bg-white rounded-lg shadow-sm border p-6">
+                  <div key={quote.id} className="glass-card rounded-2xl shadow-medium border-glass p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-1">
@@ -121,7 +124,7 @@ export default function DemoPage() {
               })}
             </div>
 
-            <div className="bg-gray-100 rounded-lg p-6">
+            <div className="glass-card rounded-2xl shadow-medium border-glass p-6">
               <h3 className="font-medium text-gray-900 mb-3">How It Works:</h3>
               <div className="space-y-2 text-sm text-gray-700">
                 <p><strong>1. Create Quote:</strong> Use the quote wizard to create a detailed travel quote</p>

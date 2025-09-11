@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Clock,
+  Calendar,
   DollarSign,
   Type
 } from 'lucide-react';
@@ -31,11 +32,13 @@ export function QuickEditPopover({
   onFullEdit, 
   position 
 }: QuickEditPopoverProps) {
-  const [editField, setEditField] = useState<'name' | 'time' | 'price' | null>(null);
+  const [editField, setEditField] = useState<'name' | 'time' | 'date' | 'price' | null>(null);
   const [tempValues, setTempValues] = useState({
     name: item.name,
     startTime: moment(item.startDate).format('HH:mm'),
     endTime: item.endDate ? moment(item.endDate).format('HH:mm') : '',
+    startDate: moment(item.startDate).format('YYYY-MM-DD'),
+    endDate: item.endDate ? moment(item.endDate).format('YYYY-MM-DD') : moment(item.startDate).format('YYYY-MM-DD'),
     price: item.price.toString(),
   });
 
@@ -81,6 +84,16 @@ export function QuickEditPopover({
           updates.endDate = moment(`${endDate} ${tempValues.endTime}`).toISOString();
         }
         break;
+      case 'date':
+        // Update date while keeping the same time
+        const startTime = moment(item.startDate).format('HH:mm');
+        const endTime = item.endDate ? moment(item.endDate).format('HH:mm') : startTime;
+        
+        updates.startDate = moment(`${tempValues.startDate} ${startTime}`).toISOString();
+        if (item.endDate) {
+          updates.endDate = moment(`${tempValues.endDate} ${endTime}`).toISOString();
+        }
+        break;
       case 'price':
         updates.price = parseFloat(tempValues.price);
         break;
@@ -95,6 +108,8 @@ export function QuickEditPopover({
       name: item.name,
       startTime: moment(item.startDate).format('HH:mm'),
       endTime: item.endDate ? moment(item.endDate).format('HH:mm') : '',
+      startDate: moment(item.startDate).format('YYYY-MM-DD'),
+      endDate: item.endDate ? moment(item.endDate).format('YYYY-MM-DD') : moment(item.startDate).format('YYYY-MM-DD'),
       price: item.price.toString(),
     });
     setEditField(null);
@@ -118,24 +133,24 @@ export function QuickEditPopover({
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 z-40" 
+        className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" 
         onClick={onCancel}
       />
       
       {/* Popover */}
       <div
         ref={popoverRef}
-        className="fixed bg-white rounded-lg shadow-xl border border-gray-200 p-4 min-w-[280px] z-50"
+        className="fixed glass-card rounded-2xl shadow-strong border-glass p-6 min-w-[320px] z-50"
         style={{
           left: safePosition.left,
           top: safePosition.top,
         }}
       >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="font-medium text-gray-900">Quick Edit</h4>
-        <Button variant="ghost" size="sm" onClick={onCancel}>
-          <X className="w-3 h-3" />
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-semibold text-gray-900">Quick Edit</h4>
+        <Button variant="ghost" size="sm" onClick={onCancel} className="hover:bg-gray-100/50 transition-smooth">
+          <X className="w-4 h-4" />
         </Button>
       </div>
 
@@ -163,62 +178,113 @@ export function QuickEditPopover({
             </div>
           ) : (
             <div 
-              className="flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded flex items-center justify-between"
+              className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
               onClick={() => setEditField('name')}
             >
-              <span className="text-sm truncate">{item.name}</span>
-              <Edit3 className="w-3 h-3 text-gray-400" />
+              <span className="text-sm truncate font-medium">{item.name}</span>
+              <Edit3 className="w-4 h-4 text-gray-400" />
             </div>
           )}
         </div>
 
-        {/* Time */}
-        <div className="flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-gray-400" />
-          {editField === 'time' ? (
-            <div className="flex-1 flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <Input
-                  ref={inputRef}
-                  type="time"
-                  value={tempValues.startTime}
-                  onChange={(e) => setTempValues(prev => ({ ...prev, startTime: e.target.value }))}
-                  onKeyDown={handleKeyPress}
-                  className="text-sm w-24"
-                />
-                {item.endDate && (
-                  <>
-                    <span className="text-xs text-gray-400">to</span>
-                    <Input
-                      type="time"
-                      value={tempValues.endTime}
-                      onChange={(e) => setTempValues(prev => ({ ...prev, endTime: e.target.value }))}
-                      onKeyDown={handleKeyPress}
-                      className="text-sm w-24"
-                    />
-                  </>
-                )}
+        {/* Date for Flights/Hotels or Time for Activities */}
+        {(item.type === 'flight' || item.type === 'hotel') ? (
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            {editField === 'date' ? (
+              <div className="flex-1 flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <Input
+                    ref={inputRef}
+                    type="date"
+                    value={tempValues.startDate}
+                    onChange={(e) => setTempValues(prev => ({ ...prev, startDate: e.target.value }))}
+                    onKeyDown={handleKeyPress}
+                    className="text-sm"
+                  />
+                  {item.endDate && (
+                    <>
+                      <span className="text-xs text-gray-400">to</span>
+                      <Input
+                        type="date"
+                        value={tempValues.endDate}
+                        onChange={(e) => setTempValues(prev => ({ ...prev, endDate: e.target.value }))}
+                        onKeyDown={handleKeyPress}
+                        className="text-sm"
+                      />
+                    </>
+                  )}
+                </div>
+                <Button size="sm" onClick={handleSaveField}>
+                  <Check className="w-3 h-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-              <Button size="sm" onClick={handleSaveField}>
-                <Check className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-          ) : (
-            <div 
-              className="flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded flex items-center justify-between"
-              onClick={() => setEditField('time')}
-            >
-              <span className="text-sm">
-                {moment(item.startDate).format('HH:mm')}
-                {item.endDate && ` - ${moment(item.endDate).format('HH:mm')}`}
-              </span>
-              <Edit3 className="w-3 h-3 text-gray-400" />
-            </div>
-          )}
-        </div>
+            ) : (
+              <div 
+                className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
+                onClick={() => setEditField('date')}
+              >
+                <span className="text-sm font-medium">
+                  {moment(item.startDate).format('MMM DD')}
+                  {item.endDate && moment(item.endDate).format('YYYY-MM-DD') !== moment(item.startDate).format('YYYY-MM-DD') && 
+                    ` - ${moment(item.endDate).format('MMM DD')}`
+                  }
+                </span>
+                <Edit3 className="w-4 h-4 text-gray-400" />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-gray-400" />
+            {editField === 'time' ? (
+              <div className="flex-1 flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <Input
+                    ref={inputRef}
+                    type="time"
+                    value={tempValues.startTime}
+                    onChange={(e) => setTempValues(prev => ({ ...prev, startTime: e.target.value }))}
+                    onKeyDown={handleKeyPress}
+                    className="text-sm w-24"
+                  />
+                  {item.endDate && (
+                    <>
+                      <span className="text-xs text-gray-400">to</span>
+                      <Input
+                        type="time"
+                        value={tempValues.endTime}
+                        onChange={(e) => setTempValues(prev => ({ ...prev, endTime: e.target.value }))}
+                        onKeyDown={handleKeyPress}
+                        className="text-sm w-24"
+                      />
+                    </>
+                  )}
+                </div>
+                <Button size="sm" onClick={handleSaveField}>
+                  <Check className="w-3 h-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <div 
+                className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
+                onClick={() => setEditField('time')}
+              >
+                <span className="text-sm font-medium">
+                  {moment(item.startDate).format('HH:mm')}
+                  {item.endDate && ` - ${moment(item.endDate).format('HH:mm')}`}
+                </span>
+                <Edit3 className="w-4 h-4 text-gray-400" />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Price */}
         <div className="flex items-center space-x-2">
@@ -244,25 +310,25 @@ export function QuickEditPopover({
             </div>
           ) : (
             <div 
-              className="flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded flex items-center justify-between"
+              className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
               onClick={() => setEditField('price')}
             >
-              <span className="text-sm font-medium">
+              <span className="text-sm font-semibold text-blue-700">
                 {formatCurrency(item.price * item.quantity)}
               </span>
-              <Edit3 className="w-3 h-3 text-gray-400" />
+              <Edit3 className="w-4 h-4 text-gray-400" />
             </div>
           )}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex space-x-2 mt-4 pt-3 border-t">
-        <Button size="sm" variant="outline" onClick={onFullEdit} className="flex-1">
-          <Edit3 className="w-3 h-3 mr-1" />
+      <div className="flex space-x-3 mt-6 pt-4 border-t border-glass">
+        <Button size="sm" variant="outline" onClick={onFullEdit} className="flex-1 hover-lift transition-smooth">
+          <Edit3 className="w-4 h-4 mr-2" />
           Full Edit
         </Button>
-        <Button size="sm" onClick={onCancel} className="flex-1">
+        <Button size="sm" onClick={onCancel} className="flex-1 bg-blue-600 hover:bg-blue-700 hover-lift transition-smooth">
           Done
         </Button>
       </div>

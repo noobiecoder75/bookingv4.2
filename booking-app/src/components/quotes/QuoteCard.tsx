@@ -129,35 +129,44 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+    <div className="glass-card rounded-2xl p-6 hover-lift group transition-smooth border border-white/20 backdrop-blur-sm shadow-soft">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-6">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 truncate">
-            {quote.title}
-          </h3>
-          {contact && (
-            <div className="flex items-center text-sm text-gray-600 mt-1">
-              <User className="w-4 h-4 mr-2" />
-              <span className="truncate">
-                {getContactDisplayName(contact.firstName, contact.lastName)}
-              </span>
+          <div className="flex items-start gap-3 mb-2">
+            <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
+              <FileText className="w-6 h-6 text-white" />
             </div>
-          )}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                {quote.title}
+              </h3>
+              {contact && (
+                <div className="flex items-center text-sm text-gray-600 mt-1">
+                  <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center mr-2">
+                    <User className="w-3 h-3 text-gray-600" />
+                  </div>
+                  <span className="truncate font-medium">
+                    {getContactDisplayName(contact.firstName, contact.lastName)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         
         <div className="flex items-center space-x-2">
-          <Badge className={getStatusColor(quote.status)}>
+          <Badge className={`${getStatusColor(quote.status)} rounded-full px-3 py-1 text-xs font-medium`}>
             {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
           </Badge>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="glass-white backdrop-blur-lg border-white/20">
               <DropdownMenuItem asChild>
                 <Link href={`/quote-wizard?edit=${quote.id}`} className="flex items-center">
                   <Edit className="w-4 h-4 mr-2" />
@@ -195,41 +204,56 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
       </div>
 
       {/* Travel Dates */}
-      <div className="flex items-center text-sm text-gray-600 mb-3">
-        <Calendar className="w-4 h-4 mr-2" />
-        <span>
-          {moment(quote.travelDates.start).format('MMM D')} - {moment(quote.travelDates.end).format('MMM D, YYYY')}
-        </span>
+      <div className="flex items-center mb-4">
+        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+          <Calendar className="w-4 h-4 text-blue-600" />
+        </div>
+        <div>
+          <div className="text-sm font-semibold text-gray-900">
+            {moment(quote.travelDates.start).format('MMM D')} - {moment(quote.travelDates.end).format('MMM D, YYYY')}
+          </div>
+          <div className="text-xs text-gray-500">
+            {moment(quote.travelDates.end).diff(moment(quote.travelDates.start), 'days')} days
+          </div>
+        </div>
       </div>
 
       {/* Items Summary */}
       {quote.items.length > 0 && (
-        <div className="flex items-center space-x-3 mb-4">
+        <div className="flex items-center gap-2 mb-6 flex-wrap">
           {Object.entries(itemTypeCounts).map(([type, count]) => (
-            <div key={type} className="flex items-center text-xs text-gray-600">
-              {getItemIcon(type)}
-              <span className="ml-1">{count}</span>
+            <div key={type} className="flex items-center bg-gray-100 rounded-full px-3 py-1 text-xs">
+              <div className="mr-2">
+                {getItemIcon(type)}
+              </div>
+              <span className="font-medium text-gray-700">{count} {type}</span>
             </div>
           ))}
-          <span className="text-xs text-gray-500">
-            {quote.items.length} item{quote.items.length !== 1 ? 's' : ''}
-          </span>
         </div>
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center text-lg font-semibold text-gray-900">
-          <DollarSign className="w-5 h-5 mr-1" />
-          {formatCurrency(quote.totalCost)}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100/50">
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
+            <DollarSign className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900">
+              {formatCurrency(quote.totalCost)}
+            </div>
+            <div className="text-xs text-gray-500">
+              Total Cost
+            </div>
+          </div>
         </div>
         
         <div className="flex items-center space-x-2">
           <Select value={quote.status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-auto h-8 text-xs">
+            <SelectTrigger className="w-auto h-9 text-sm rounded-lg border-gray-200 hover:border-gray-300">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="glass-white backdrop-blur-lg border-white/20">
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="sent">Sent</SelectItem>
               <SelectItem value="accepted">Accepted</SelectItem>
@@ -239,8 +263,13 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
         </div>
       </div>
 
-      <div className="text-xs text-gray-500 mt-2">
-        Created {moment(quote.createdAt).format('MMM D, YYYY')}
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100/30">
+        <div className="text-xs text-gray-500">
+          Created {moment(quote.createdAt).format('MMM D, YYYY')}
+        </div>
+        <div className="text-xs text-gray-500">
+          {quote.items.length} item{quote.items.length !== 1 ? 's' : ''}
+        </div>
       </div>
     </div>
   );

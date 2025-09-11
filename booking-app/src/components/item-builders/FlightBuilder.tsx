@@ -282,7 +282,10 @@ export function FlightBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }
                 min="1"
                 max="9"
                 value={formData.adults}
-                onChange={(e) => setFormData(prev => ({ ...prev, adults: parseInt(e.target.value) }))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setFormData(prev => ({ ...prev, adults: isNaN(value) ? 1 : value }));
+                }}
               />
             </div>
 
@@ -294,7 +297,10 @@ export function FlightBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }
                 min="0"
                 max="9"
                 value={formData.children}
-                onChange={(e) => setFormData(prev => ({ ...prev, children: parseInt(e.target.value) }))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setFormData(prev => ({ ...prev, children: isNaN(value) ? 0 : value }));
+                }}
               />
             </div>
 
@@ -306,7 +312,10 @@ export function FlightBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }
                 min="0"
                 max="9"
                 value={formData.infants}
-                onChange={(e) => setFormData(prev => ({ ...prev, infants: parseInt(e.target.value) }))}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setFormData(prev => ({ ...prev, infants: isNaN(value) ? 0 : value }));
+                }}
               />
             </div>
 

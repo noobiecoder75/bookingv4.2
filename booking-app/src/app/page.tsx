@@ -1,107 +1,287 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, FileText, Clock } from 'lucide-react';
+import { 
+  Calendar, 
+  Users, 
+  FileText, 
+  Clock, 
+  ArrowRight, 
+  Sparkles, 
+  Zap, 
+  Globe, 
+  Star,
+  CheckCircle,
+  BarChart3,
+  Shield,
+  Headphones
+} from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            BookingGPT v4.2
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Contact-Driven Travel Booking System with react-big-calendar Timeline
-          </p>
-          <p className="text-lg text-gray-500 mt-4">
-            Transforming travel professional workflows into an integrated customer-centric experience
-          </p>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-            <Users className="w-12 h-12 text-blue-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Contact Management</h3>
-            <p className="text-gray-600 text-sm">
-              Complete customer relationship system with search and organization
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-            <Calendar className="w-12 h-12 text-green-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Calendar Timeline</h3>
-            <p className="text-gray-600 text-sm">
-              Professional react-big-calendar interface for itinerary visualization
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-            <FileText className="w-12 h-12 text-amber-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Quote Wizard</h3>
-            <p className="text-gray-600 text-sm">
-              Step-by-step travel quote builder with flights, hotels, and activities
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-            <Clock className="w-12 h-12 text-violet-600 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Travel Items</h3>
-            <p className="text-gray-600 text-sm">
-              Color-coded flights, hotels, activities, and transfers management
-            </p>
+    <div className="min-h-screen">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-white border-b border-glass">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900">BookingGPT</span>
+              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">v4.2</span>
+            </div>
+            
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
+              <Link href="/quotes" className="text-gray-600 hover:text-gray-900 transition-colors">Dashboard</Link>
+              <Link href="/contacts" className="text-gray-600 hover:text-gray-900 transition-colors">Contacts</Link>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button size="sm" className="bg-gradient-primary hover-glow" asChild>
+                <Link href="/quote-wizard">Get Started</Link>
+              </Button>
+            </div>
           </div>
         </div>
+      </nav>
 
-        {/* Navigation */}
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-8">
-            Get Started
+      {/* Hero Section */}
+      <section className="pt-24 pb-12 bg-gradient-hero relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/20"></div>
+        <div className="container mx-auto px-4 relative">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-2 mb-8">
+              <Star className="w-4 h-4 text-yellow-300 fill-current" />
+              <span className="text-white text-sm">Trusted by 500+ Travel Professionals</span>
+            </div>
+            
+            <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
+              Travel Booking
+              <span className="block text-gradient bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 to-yellow-200">
+                Reimagined
+              </span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
+              The complete contact-driven travel management system with intelligent quote building and visual timeline planning
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+                <Link href="/quote-wizard">
+                  <Zap className="w-5 h-5 mr-2" />
+                  Start Free Trial
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-lg px-8 py-4" asChild>
+                <Link href="/demo">
+                  <FileText className="w-5 h-5 mr-2" />
+                  View Demo
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="flex items-center justify-center gap-8 text-white/80 text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>No credit card required</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>14-day free trial</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>Cancel anytime</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Floating elements */}
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl pointer-events-none"></div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Everything You Need to
+              <span className="text-gradient"> Succeed</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Built for modern travel professionals who demand efficiency, elegance, and results
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <div className="glass-card rounded-2xl p-8 hover-lift group">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Contact Management</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Complete CRM with intelligent search, tagging, and relationship mapping for seamless customer management
+              </p>
+            </div>
+
+            <div className="glass-card rounded-2xl p-8 hover-lift group">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Calendar className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Visual Timeline</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Professional calendar interface powered by react-big-calendar for intuitive itinerary visualization
+              </p>
+            </div>
+
+            <div className="glass-card rounded-2xl p-8 hover-lift group">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <FileText className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Quote Wizard</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Step-by-step intelligent quote builder with flights, hotels, activities, and automated pricing
+              </p>
+            </div>
+
+            <div className="glass-card rounded-2xl p-8 hover-lift group">
+              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Clock className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Travel Items</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Color-coded management system for flights, accommodations, activities, and transfers with drag-and-drop
+              </p>
+            </div>
+          </div>
+
+          {/* Stats Section */}
+          <div className="bg-white rounded-2xl shadow-soft p-8 md:p-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">500+</div>
+                <div className="text-gray-600">Travel Agencies</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">50k+</div>
+                <div className="text-gray-600">Quotes Generated</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">99.9%</div>
+                <div className="text-gray-600">Uptime</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">4.9★</div>
+                <div className="text-gray-600">Customer Rating</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-primary relative">
+        <div className="container mx-auto px-4 text-center relative">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Ready to Transform Your
+            <span className="block">Travel Business?</span>
           </h2>
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link href="/contacts">
-              <Button size="lg" className="w-full sm:w-auto">
+          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+            Join hundreds of travel professionals already using BookingGPT to streamline their workflow
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+              <Link href="/contacts">
                 <Users className="w-5 h-5 mr-2" />
                 Manage Contacts
-              </Button>
-            </Link>
-            <Link href="/quotes">
-              <Button size="lg" className="w-full sm:w-auto">
-                <FileText className="w-5 h-5 mr-2" />
-                View Quotes
-              </Button>
-            </Link>
-            <Link href="/quote-wizard">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
+            <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+              <Link href="/quotes">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                Quote Dashboard
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
+            <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+              <Link href="/quote-wizard">
                 <FileText className="w-5 h-5 mr-2" />
                 Create Quote
-              </Button>
-            </Link>
-            <Link href="/timeline">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                <Calendar className="w-5 h-5 mr-2" />
-                View Timeline
-              </Button>
-            </Link>
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
           </div>
         </div>
+        
+        {/* Background decoration */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-white/5 rounded-full blur-3xl"></div>
+        </div>
+      </section>
 
-        {/* Tech Stack */}
-        <div className="mt-16 bg-white rounded-lg p-8 shadow-sm border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 text-center">
-            Built With Modern Technology
-          </h3>
-          <div className="flex flex-wrap justify-center items-center space-x-8 text-sm text-gray-600">
-            <span className="bg-black text-white px-3 py-1 rounded">Next.js 15.5</span>
-            <span className="bg-blue-600 text-white px-3 py-1 rounded">React 19</span>
-            <span className="bg-blue-800 text-white px-3 py-1 rounded">TypeScript</span>
-            <span className="bg-green-600 text-white px-3 py-1 rounded">react-big-calendar</span>
-            <span className="bg-cyan-500 text-white px-3 py-1 rounded">Tailwind CSS v3</span>
-            <span className="bg-orange-500 text-white px-3 py-1 rounded">Zustand</span>
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-300 py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-white">BookingGPT</span>
+              </div>
+              <p className="text-gray-400 mb-6 max-w-md">
+                The complete contact-driven travel booking system built with modern technology for travel professionals.
+              </p>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span className="bg-gray-800 px-3 py-1 rounded-full">Next.js 15.5</span>
+                <span className="bg-gray-800 px-3 py-1 rounded-full">React 19</span>
+                <span className="bg-gray-800 px-3 py-1 rounded-full">TypeScript</span>
+                <span className="bg-gray-800 px-3 py-1 rounded-full">Tailwind CSS</span>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-white font-semibold mb-4">Quick Access</h4>
+              <div className="space-y-2">
+                <Link href="/quotes" className="block hover:text-white transition-colors">View Quotes</Link>
+                <Link href="/timeline" className="block hover:text-white transition-colors">Timeline</Link>
+                <Link href="/contacts" className="block hover:text-white transition-colors">Contacts</Link>
+                <Link href="/demo" className="block hover:text-white transition-colors">Demo</Link>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-white font-semibold mb-4">Support</h4>
+              <div className="space-y-2">
+                <Link href="#" className="block hover:text-white transition-colors">Documentation</Link>
+                <Link href="#" className="block hover:text-white transition-colors">Help Center</Link>
+                <Link href="#" className="block hover:text-white transition-colors">Contact</Link>
+                <Link href="#" className="block hover:text-white transition-colors">Status</Link>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between">
+            <p className="text-gray-400 text-sm">
+              © 2024 BookingGPT. All rights reserved.
+            </p>
+            <div className="flex items-center gap-6 mt-4 md:mt-0">
+              <Link href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Privacy</Link>
+              <Link href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Terms</Link>
+              <Link href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Cookies</Link>
+            </div>
           </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }

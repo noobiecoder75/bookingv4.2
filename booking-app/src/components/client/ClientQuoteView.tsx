@@ -92,7 +92,12 @@ export function ClientQuoteView({
           break;
         case 'hotel':
           if (itemDetails.location) {
-            details.push(itemDetails.location);
+            const location = itemDetails.location as any;
+            if (typeof location === 'string') {
+              details.push(location);
+            } else if (location && typeof location === 'object') {
+              details.push(`${location.city}, ${location.country}`);
+            }
           }
           if (itemDetails.room_type) {
             details.push(itemDetails.room_type);
@@ -103,7 +108,12 @@ export function ClientQuoteView({
           break;
         case 'activity':
           if (itemDetails.location) {
-            details.push(itemDetails.location);
+            const location = itemDetails.location as any;
+            if (typeof location === 'string') {
+              details.push(location);
+            } else if (location && typeof location === 'object') {
+              details.push(`${location.city}, ${location.country}`);
+            }
           }
           if (itemDetails.duration) {
             details.push(`${itemDetails.duration} hours`);
@@ -153,9 +163,9 @@ export function ClientQuoteView({
   const isQuoteFinal = quoteStatus === 'accepted' || quoteStatus === 'rejected';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="glass-white border-glass shadow-soft">
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-start justify-between">
             <div>
@@ -203,7 +213,7 @@ export function ClientQuoteView({
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Trip Overview */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6 p-6">
+        <div className="glass-card rounded-2xl shadow-medium border-glass mb-6 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Trip Overview</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
@@ -232,7 +242,7 @@ export function ClientQuoteView({
 
         {/* Travel Items by Category */}
         {Object.entries(groupedItems).map(([type, items]) => (
-          <div key={type} className="bg-white rounded-lg shadow-sm border mb-6">
+          <div key={type} className="glass-card rounded-2xl shadow-medium border-glass mb-6">
             <div className="px-6 py-4 border-b bg-gray-50 rounded-t-lg">
               <div className="flex items-center space-x-2">
                 {getItemIcon(type)}
@@ -284,7 +294,7 @@ export function ClientQuoteView({
         ))}
 
         {/* Quote Summary */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6 p-6">
+        <div className="glass-card rounded-2xl shadow-medium border-glass mb-6 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quote Summary</h3>
           <div className="space-y-3">
             {Object.entries(groupedItems).map(([type, items]) => {
@@ -309,7 +319,7 @@ export function ClientQuoteView({
 
         {/* Action Buttons */}
         {!isQuoteFinal && quote.status === 'sent' && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="glass-card rounded-2xl shadow-medium border-glass p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">What would you like to do?</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Button 
@@ -351,7 +361,7 @@ export function ClientQuoteView({
 
         {/* Status Messages */}
         {isQuoteFinal && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="glass-card rounded-2xl shadow-medium border-glass p-6">
             <div className={`flex items-center space-x-3 ${
               quoteStatus === 'accepted' ? 'text-green-600' : 'text-red-600'
             }`}>
@@ -388,7 +398,7 @@ export function ClientQuoteView({
         )}
 
         {/* Contact Information */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mt-6">
+        <div className="glass-card rounded-2xl shadow-medium border-glass p-6 mt-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Need Help?</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

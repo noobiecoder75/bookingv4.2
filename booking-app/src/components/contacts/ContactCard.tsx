@@ -16,20 +16,32 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
   const quotesCount = contact.quotes.length;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+    <div className="glass-card rounded-2xl p-6 hover-lift group transition-smooth border border-white/20 backdrop-blur-sm shadow-soft">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">{displayName}</h3>
-          <p className="text-sm text-gray-500">
-            Member since {formatDate(contact.createdAt)}
-          </p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-lg">
+                {displayName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                {displayName}
+              </h3>
+              <p className="text-sm text-gray-500">
+                Member since {formatDate(contact.createdAt)}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             size="sm"
             variant="ghost"
             onClick={() => onEdit(contact)}
+            className="hover:bg-blue-50 hover:text-blue-600"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -37,7 +49,7 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
             size="sm"
             variant="ghost"
             onClick={() => onDelete(contact.id)}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -45,26 +57,35 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
       </div>
 
       {/* Contact Info */}
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Mail className="w-4 h-4 flex-shrink-0" />
-          <span className="truncate">{contact.email}</span>
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center space-x-3 text-sm">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Mail className="w-4 h-4 text-blue-600" />
+          </div>
+          <span className="text-gray-700 truncate font-medium">{contact.email}</span>
         </div>
         {contact.phone && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Phone className="w-4 h-4 flex-shrink-0" />
-            <span>{contact.phone}</span>
+          <div className="flex items-center space-x-3 text-sm">
+            <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <Phone className="w-4 h-4 text-emerald-600" />
+            </div>
+            <span className="text-gray-700 font-medium">{contact.phone}</span>
           </div>
         )}
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span>
-            {quotesCount} {quotesCount === 1 ? 'quote' : 'quotes'}
-          </span>
+      {/* Stats & Action */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100/50">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+            <Calendar className="w-4 h-4 text-purple-600" />
+          </div>
+          <div>
+            <div className="text-lg font-bold text-gray-900">{quotesCount}</div>
+            <div className="text-xs text-gray-500">
+              {quotesCount === 1 ? 'Quote' : 'Quotes'}
+            </div>
+          </div>
         </div>
         <Button
           size="sm"
@@ -74,6 +95,7 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
             // This will be implemented when we add routing
             console.log('View quotes for:', contact.id);
           }}
+          className="group-hover:bg-gradient-primary group-hover:text-white group-hover:border-transparent"
         >
           View Quotes
         </Button>

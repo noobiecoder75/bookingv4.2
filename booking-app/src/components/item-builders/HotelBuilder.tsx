@@ -339,10 +339,13 @@ export function HotelBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }:
                   type="number"
                   min="0"
                   value={formData.priceRange.min}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    priceRange: { ...prev.priceRange, min: parseInt(e.target.value) }
-                  }))}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      priceRange: { ...prev.priceRange, min: isNaN(value) ? 0 : value }
+                    }));
+                  }}
                   placeholder="Min"
                   className="w-24"
                 />
@@ -351,10 +354,13 @@ export function HotelBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }:
                   type="number"
                   min="0"
                   value={formData.priceRange.max}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    priceRange: { ...prev.priceRange, max: parseInt(e.target.value) }
-                  }))}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      priceRange: { ...prev.priceRange, max: isNaN(value) ? 1000 : value }
+                    }));
+                  }}
                   placeholder="Max"
                   className="w-24"
                 />

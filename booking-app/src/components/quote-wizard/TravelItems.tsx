@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, memo } from 'react';
-import { Calendar, momentLocalizer, View, SlotInfo } from 'react-big-calendar';
+import { useState, useMemo, useCallback, useEffect, memo, useRef } from 'react';
+import { Calendar, momentLocalizer, View, SlotInfo, ToolbarProps } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
 import { TravelQuote, TravelItem, CalendarEvent } from '@/types';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, getTravelItemColor } from '@/lib/utils';
-import { Plane, Hotel, MapPin, Car, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Plane, Hotel, MapPin, Car, Calendar as CalendarIcon } from 'lucide-react';
 import { FlightBuilder } from '@/components/item-builders/FlightBuilder';
 import { HotelBuilder } from '@/components/item-builders/HotelBuilder';
 import { EditItemModal } from '@/components/item-editors/EditItemModal';
@@ -18,6 +18,7 @@ import { QuickEditPopover } from '@/components/item-editors/QuickEditPopover';
 import { TravelListView } from './TravelListView';
 import { FilterControls } from './FilterControls';
 import { TimelineNavigation } from './TimelineNavigation';
+import { ContextMenu, ContextMenuItem } from '@/components/ui/context-menu';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 
@@ -45,6 +46,22 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   const [editingItem, setEditingItem] = useState<TravelItem | null>(null);
   const [quickEditItem, setQuickEditItem] = useState<TravelItem | null>(null);
   const [quickEditPosition, setQuickEditPosition] = useState<{ x: number; y: number } | null>(null);
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    isOpen: boolean;
+    slotInfo: SlotInfo | null;
+  }>({
+    x: 0,
+    y: 0,
+    isOpen: false,
+    slotInfo: null,
+  });
+
+  // Ref to store last click coordinates for context menu positioning
+  const lastClickPosition = useRef({ x: 0, y: 0 });
 
   const currentQuote = useQuoteStore(state => 
     state.quotes.find(q => q.id === quote.id)
@@ -128,7 +145,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     if (date.getTime() !== travelStartDate.getTime()) {
       setDate(travelStartDate);
     }
-  }, [quote.travelDates.start, date]);
+  }, [quote.travelDates.start]);
 
   // Convert travel items to calendar events (using filtered items)
   const events = useMemo(() => {
@@ -177,9 +194,17 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   }, [displayItems, quote.contactId, quote.id]);
 
   // Handle slot selection (clicking empty calendar space)
-  const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
-    setSelectedSlot(slotInfo);
-    setShowForm(true);
+  const handleSelectSlot = useCallback((slotInfo: SlotInfo, e?: React.SyntheticEvent) => {
+    // Use stored click coordinates from the wrapper div
+    const { x, y } = lastClickPosition.current;
+    
+    // Show context menu at the stored click position
+    setContextMenu({
+      x,
+      y,
+      isOpen: true,
+      slotInfo,
+    });
   }, []);
 
   // Handle event selection (clicking existing event)
@@ -306,8 +331,33 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
     setEditingItem(null);
   };
 
+  // Handle context menu item selection
+  const handleContextMenuItemSelect = (itemType: 'flight' | 'hotel' | 'activity' | 'transfer') => {
+    const { slotInfo } = contextMenu;
+    if (!slotInfo) return;
+
+    // Close context menu
+    setContextMenu(prev => ({ ...prev, isOpen: false }));
+
+    // Open appropriate modal based on item type
+    switch (itemType) {
+      case 'flight':
+        setShowFlightBuilder(true);
+        break;
+      case 'hotel':
+        setShowHotelBuilder(true);
+        break;
+      case 'activity':
+      case 'transfer':
+        setSelectedSlot(slotInfo);
+        setItemType(itemType);
+        setShowForm(true);
+        break;
+    }
+  };
+
   // Simplified Custom Toolbar (only calendar navigation)
-  const CustomToolbar = (toolbar: any) => {
+  const CustomToolbar = (toolbar: ToolbarProps) => {
     const goToBack = () => {
       toolbar.onNavigate('PREV');
     };
@@ -322,9 +372,27 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
 
     const label = () => {
       const date = moment(toolbar.date);
+      let displayText;
+      
+      switch (toolbar.view) {
+        case 'month':
+          displayText = date.format('MMMM YYYY');
+          break;
+        case 'week':
+          const weekStart = moment(date).startOf('week');
+          const weekEnd = moment(date).endOf('week');
+          displayText = `${weekStart.format('MMM D')}-${weekEnd.format('D, YYYY')}`;
+          break;
+        case 'day':
+          displayText = date.format('dddd, MMM D, YYYY');
+          break;
+        default:
+          displayText = date.format('MMMM YYYY');
+      }
+      
       return (
         <span className="text-lg font-semibold text-gray-900">
-          {date.format('MMMM YYYY')}
+          {displayText}
         </span>
       );
     };
@@ -376,7 +444,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   );
 
   // Enhanced event component with overlap indicator (memoized for performance)
-  const EventComponent = memo(({ event }: { event: CalendarEvent }) => {
+  const EventComponent = memo<{ event: CalendarEvent }>(function EventComponent({ event }) {
     const item = currentQuote.items.find(item => item.id === event.id);
     if (!item) return <div>{event.title}</div>;
     
@@ -434,7 +502,7 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
             Travel Timeline
           </h2>
           <p className="text-gray-600">
-            <span className="font-medium">Interactive Calendar:</span> Click to add • Drag to move • Resize to adjust duration • Click items to edit
+            <span className="font-medium">Interactive Calendar:</span> Click empty space to choose item type • Drag to move • Resize to adjust duration • Click items to edit
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -511,7 +579,13 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           {/* Timeline Content */}
           {viewMode === 'calendar' ? (
             <div className="p-4">
-              <DragAndDropCalendar
+              <div 
+                onMouseDown={(e) => {
+                  // Store click coordinates for context menu positioning
+                  lastClickPosition.current = { x: e.clientX, y: e.clientY };
+                }}
+              >
+                <DragAndDropCalendar
                 localizer={localizer}
                 events={events}
                 startAccessor="start"
@@ -542,7 +616,8 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
                   if (!item) return event.title;
                   return `${event.title}\n${formatCurrency(item.price * item.quantity)}\nClick to edit • Drag to move`;
                 }}
-              />
+                />
+              </div>
             </div>
           ) : (
             <div className="p-6">
@@ -654,6 +729,39 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           onCancel={() => setEditingItem(null)}
         />
       )}
+
+      {/* Context Menu */}
+      <ContextMenu
+        x={contextMenu.x}
+        y={contextMenu.y}
+        isOpen={contextMenu.isOpen}
+        onClose={() => setContextMenu(prev => ({ ...prev, isOpen: false }))}
+      >
+        <ContextMenuItem
+          icon={<Plane className="w-4 h-4 text-blue-600" />}
+          onClick={() => handleContextMenuItemSelect('flight')}
+        >
+          Add Flight
+        </ContextMenuItem>
+        <ContextMenuItem
+          icon={<Hotel className="w-4 h-4 text-green-600" />}
+          onClick={() => handleContextMenuItemSelect('hotel')}
+        >
+          Add Hotel
+        </ContextMenuItem>
+        <ContextMenuItem
+          icon={<MapPin className="w-4 h-4 text-orange-600" />}
+          onClick={() => handleContextMenuItemSelect('activity')}
+        >
+          Add Activity
+        </ContextMenuItem>
+        <ContextMenuItem
+          icon={<Car className="w-4 h-4 text-purple-600" />}
+          onClick={() => handleContextMenuItemSelect('transfer')}
+        >
+          Add Transfer
+        </ContextMenuItem>
+      </ContextMenu>
     </div>
   );
 }

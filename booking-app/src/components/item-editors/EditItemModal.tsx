@@ -127,9 +127,9 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b p-6 z-10">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-50/80 via-blue-50/80 to-purple-50/80 backdrop-filter backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="glass-card rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-strong border-glass">
+        <div className="sticky top-0 glass-white border-b border-glass p-6 z-10 rounded-t-2xl">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold flex items-center space-x-2">
               <div style={{ color: getTravelItemColor(item.type) }}>
@@ -145,8 +145,8 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
 
         <div className="p-6 space-y-6">
           {/* Basic Information */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">Basic Information</h4>
+          <div className="glass-card rounded-2xl p-6 shadow-medium border-glass space-y-4">
+            <h4 className="font-semibold text-gray-900">Basic Information</h4>
             
             <div>
               <Label htmlFor="name">Name</Label>
@@ -273,16 +273,16 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
               </div>
             </div>
 
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="p-4 glass-white rounded-xl border-glass">
+              <p className="text-sm font-medium text-blue-700">
                 Total: {formatCurrency(parseFloat(formData.price || '0') * parseInt(formData.quantity || '1'))}
               </p>
             </div>
           </div>
 
           {/* Type-specific Details */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">{item.type.charAt(0).toUpperCase() + item.type.slice(1)} Details</h4>
+          <div className="glass-card rounded-2xl p-6 shadow-medium border-glass space-y-4">
+            <h4 className="font-semibold text-gray-900">{item.type.charAt(0).toUpperCase() + item.type.slice(1)} Details</h4>
 
             {item.type === 'flight' && (
               <div className="space-y-4">
@@ -399,7 +399,10 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
                     <Input
                       type="number"
                       value={activityDetails.duration}
-                      onChange={(e) => setActivityDetails(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        setActivityDetails(prev => ({ ...prev, duration: isNaN(value) ? 0 : value }));
+                      }}
                     />
                   </div>
                 </div>
@@ -458,7 +461,10 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
                     <Input
                       type="number"
                       value={transferDetails.duration}
-                      onChange={(e) => setTransferDetails(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        setTransferDetails(prev => ({ ...prev, duration: isNaN(value) ? 0 : value }));
+                      }}
                     />
                   </div>
                 </div>
@@ -467,24 +473,26 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-between pt-4">
-            <Button 
-              variant="outline" 
-              onClick={handleDelete}
-              className="text-red-600 border-red-200 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Item
-            </Button>
+          <div className="glass-card rounded-2xl p-6 shadow-medium border-glass">
+            <div className="flex justify-between items-center">
+              <Button 
+                variant="outline" 
+                onClick={handleDelete}
+                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-smooth"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Item
+              </Button>
 
-            <div className="flex space-x-3">
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
+              <div className="flex space-x-3">
+                <Button variant="outline" onClick={onCancel} className="hover-lift transition-smooth">
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 hover-lift transition-smooth">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
             </div>
           </div>
         </div>
