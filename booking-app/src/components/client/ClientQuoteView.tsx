@@ -20,10 +20,13 @@ import {
   FileText,
   User,
   Mail,
+  Download,
+  CalendarPlus,
 } from 'lucide-react';
 import moment from 'moment';
 import { ClientMessageModal } from './ClientMessageModal';
 import { ClientPaymentModal } from './ClientPaymentModal';
+import { downloadICSFile, generateGoogleCalendarLink } from '@/lib/calendar-export';
 
 interface ClientQuoteViewProps {
   quote: TravelQuote;
@@ -92,11 +95,12 @@ export function ClientQuoteView({
           break;
         case 'hotel':
           if (itemDetails.location) {
-            const location = itemDetails.location as any;
+            const location = itemDetails.location as unknown;
             if (typeof location === 'string') {
               details.push(location);
-            } else if (location && typeof location === 'object') {
-              details.push(`${location.city}, ${location.country}`);
+            } else if (location && typeof location === 'object' && 'city' in location && 'country' in location) {
+              const loc = location as { city: string; country: string };
+              details.push(`${loc.city}, ${loc.country}`);
             }
           }
           if (itemDetails.room_type) {
@@ -108,11 +112,12 @@ export function ClientQuoteView({
           break;
         case 'activity':
           if (itemDetails.location) {
-            const location = itemDetails.location as any;
+            const location = itemDetails.location as unknown;
             if (typeof location === 'string') {
               details.push(location);
-            } else if (location && typeof location === 'object') {
-              details.push(`${location.city}, ${location.country}`);
+            } else if (location && typeof location === 'object' && 'city' in location && 'country' in location) {
+              const loc = location as { city: string; country: string };
+              details.push(`${loc.city}, ${loc.country}`);
             }
           }
           if (itemDetails.duration) {
@@ -150,6 +155,15 @@ export function ClientQuoteView({
     onQuoteAction?.('payment');
     // Here you would typically process the payment
     console.log('Payment initiated:', { paymentData, quoteId: quote.id });
+  };
+
+  const handleDownloadCalendar = () => {
+    downloadICSFile(quote);
+  };
+
+  const handleAddToGoogleCalendar = (item: TravelItem) => {
+    const url = generateGoogleCalendarLink(item, quote);
+    window.open(url, '_blank');
   };
 
   const groupedItems = quote.items.reduce((acc, item) => {
@@ -275,7 +289,7 @@ export function ClientQuoteView({
                           </div>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right space-y-2">
                         <div className="text-lg font-semibold text-gray-900">
                           {formatCurrency(item.price * item.quantity)}
                         </div>
@@ -284,6 +298,15 @@ export function ClientQuoteView({
                             {formatCurrency(item.price)} each
                           </div>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddToGoogleCalendar(item)}
+                          className="text-xs"
+                        >
+                          <CalendarPlus className="w-3 h-3 mr-1" />
+                          Add to Calendar
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -314,6 +337,30 @@ export function ClientQuoteView({
                 <span>{formatCurrency(quote.totalCost)}</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Calendar Export */}
+        <div className="glass-card rounded-2xl shadow-medium border-glass p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add to Your Calendar</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button 
+              onClick={handleDownloadCalendar}
+              variant="outline"
+              className="flex items-center justify-center space-x-2 h-12"
+            >
+              <Download className="w-5 h-5" />
+              <span>Download Calendar (.ics)</span>
+            </Button>
+            
+            <Button 
+              onClick={() => window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(quote.title)}&dates=${moment(quote.travelDates.start).format('YYYYMMDD')}/${moment(quote.travelDates.end).format('YYYYMMDD')}&details=${encodeURIComponent(`Travel itinerary for ${quote.title}. Total cost: ${formatCurrency(quote.totalCost)}`)}`, '_blank')}
+              variant="outline"
+              className="flex items-center justify-center space-x-2 h-12 text-blue-600 border-blue-300 hover:bg-blue-50"
+            >
+              <CalendarPlus className="w-5 h-5" />
+              <span>Add Trip to Google Calendar</span>
+            </Button>
           </div>
         </div>
 
