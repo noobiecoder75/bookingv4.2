@@ -1,10 +1,48 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Mail, Lock, Sparkles } from 'lucide-react';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState('demo@bookinggpt.com');
+  const [password, setPassword] = useState('demo123');
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, isAuthenticated } = useAuthStore();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      const returnUrl = searchParams.get('returnUrl') || '/quotes';
+      router.push(returnUrl);
+    }
+  }, [isAuthenticated, router, searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Demo login - accepts any credentials
+      await login(email, password);
+
+      // Get return URL or default to dashboard
+      const returnUrl = searchParams.get('returnUrl') || '/quotes';
+      router.push(returnUrl);
+    } catch (error) {
+      console.error('Login failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
       {/* Background decoration */}
@@ -37,12 +75,12 @@ export default function LoginPage() {
           {/* Demo Notice */}
           <div className="bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 mb-6">
             <p className="text-white/90 text-sm text-center">
-              <strong>Demo Mode:</strong> This is a demonstration login. Click "Sign In" to access the app.
+              <strong>Demo Mode:</strong> This is a demonstration login. Click &quot;Sign In&quot; to access the app.
             </p>
           </div>
 
           {/* Login Form */}
-          <form className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white/90 font-medium">
                 Email Address
@@ -54,7 +92,8 @@ export default function LoginPage() {
                   type="email"
                   placeholder="Enter your email"
                   className="pl-12 bg-white/20 border-white/30 text-white placeholder:text-white/60"
-                  defaultValue="demo@bookinggpt.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -70,7 +109,8 @@ export default function LoginPage() {
                   type="password"
                   placeholder="Enter your password"
                   className="pl-12 bg-white/20 border-white/30 text-white placeholder:text-white/60"
-                  defaultValue="demo123"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
@@ -85,11 +125,14 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <Link href="/quotes">
-              <Button size="lg" className="w-full btn-glass hover-lift">
-                Sign In to Dashboard
-              </Button>
-            </Link>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full btn-glass hover-lift"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing in...' : 'Sign In to Dashboard'}
+            </Button>
           </form>
 
           {/* Footer */}

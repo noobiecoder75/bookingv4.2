@@ -9,8 +9,9 @@ import { ContactSelection } from './ContactSelection';
 import { QuoteDetails } from './QuoteDetails';
 import { TravelItems } from './TravelItems';
 import { QuoteReview } from './QuoteReview';
-import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, Save, X } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type WizardStep = 'contact' | 'details' | 'items' | 'review';
 
@@ -19,11 +20,12 @@ interface QuoteWizardProps {
 }
 
 export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<WizardStep>('contact');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [currentQuote, setCurrentQuote] = useState<Partial<TravelQuote> | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  
+
   const { addQuote, updateQuote, getQuoteById, setCurrentQuote: setStoreCurrentQuote } = useQuoteStore();
   const { addQuoteToContact, getContactById } = useContactStore();
 
@@ -125,13 +127,17 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
   const handleQuoteComplete = () => {
     // Show success message or redirect
     alert(isEditMode ? 'Quote updated successfully!' : 'Quote created successfully!');
-    
-    // Reset wizard
-    setCurrentStep('contact');
-    setSelectedContact(null);
-    setCurrentQuote(null);
-    setIsEditMode(false);
-    setStoreCurrentQuote(null);
+
+    // Redirect to quotes dashboard
+    router.push('/quotes');
+  };
+
+  const handleSaveAndExit = () => {
+    if (currentQuote?.id) {
+      // Save current state if we have a quote
+      alert('Quote saved as draft');
+    }
+    router.push('/quotes');
   };
 
   const renderStepContent = () => {
@@ -217,13 +223,6 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
       {/* Navigation */}
       <div className="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center space-x-3">
-          <Link href="/">
-            <Button variant="ghost">
-              <Home className="w-4 h-4 mr-2" />
-              Dashboard
-            </Button>
-          </Link>
-          
           <Button
             variant="outline"
             onClick={handlePrevious}
@@ -232,19 +231,39 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
             <ChevronLeft className="w-4 h-4 mr-2" />
             Previous
           </Button>
+
+          <Button
+            variant="ghost"
+            onClick={handleSaveAndExit}
+            className="text-gray-600"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save & Exit
+          </Button>
         </div>
 
-        <Button
-          onClick={handleNext}
-          disabled={
-            currentStepIndex === steps.length - 1 ||
-            (currentStep === 'contact' && !selectedContact) ||
-            (currentStep === 'details' && !currentQuote)
-          }
-        >
-          Next
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            onClick={handleNext}
+            disabled={
+              currentStepIndex === steps.length - 1 ||
+              (currentStep === 'contact' && !selectedContact) ||
+              (currentStep === 'details' && !currentQuote)
+            }
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/quotes')}
+            className="text-gray-600"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+        </div>
       </div>
 
       {/* Step Content */}
