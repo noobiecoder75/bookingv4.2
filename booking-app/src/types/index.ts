@@ -95,3 +95,7 @@ export interface CalendarEvent {
     details: Record<string, unknown>;
   };
 }
+
+// Export financial types
+export * from './financial';
+export * from './booking';

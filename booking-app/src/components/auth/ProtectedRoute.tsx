@@ -7,9 +7,10 @@ import { AppNav } from '@/components/navigation/AppNav';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  showNavigation?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, showNavigation = false }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, checkAuth } = useAuthStore();
@@ -36,8 +37,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   return (
     <>
-      <AppNav />
-      <div className="pt-16">
+      {showNavigation && <AppNav />}
+      <div className={showNavigation ? "pt-16" : ""}>
         {children}
       </div>
     </>

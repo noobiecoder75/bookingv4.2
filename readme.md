@@ -3,6 +3,7 @@
 **Contact-Driven Travel Booking System with react-big-calendar Timeline**
 
 [![Phase](https://img.shields.io/badge/Phase-1%20Development-blue)](./PHASE_1_DEV.md)
+
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)

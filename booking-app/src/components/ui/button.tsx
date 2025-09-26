@@ -4,20 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shadow-soft hover:shadow-medium hover:-translate-y-0.5",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-gradient-primary text-white hover:shadow-strong hover-glow border-0",
+        default: "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 border-0",
         destructive:
-          "bg-gradient-to-r from-rose-500 to-red-500 text-white hover:shadow-strong",
+          "bg-red-600 text-white hover:bg-red-700 hover:shadow-lg",
         outline:
-          "border border-gray-200 bg-white/70 backdrop-blur-sm hover:bg-white hover:border-gray-300 text-gray-700 shadow-soft",
+          "border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 text-gray-700",
         secondary:
-          "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:shadow-strong",
-        ghost: "hover:bg-gray-100 hover:text-gray-900 shadow-none hover:shadow-soft",
-        link: "text-primary underline-offset-4 hover:underline shadow-none hover:shadow-none",
-        glass: "glass-white text-white border-glass hover:bg-white/20 hover-lift",
+          "bg-purple-600 text-white hover:bg-purple-700 hover:shadow-lg",
+        ghost: "hover:bg-gray-100 hover:text-gray-900",
+        link: "text-blue-600 underline-offset-4 hover:underline",
+        glass: "bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 hover:-translate-y-1",
       },
       size: {
         default: "h-11 px-6 py-3",

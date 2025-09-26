@@ -1,0 +1,330 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useInvoiceStore } from '@/store/invoice-store';
+import { useAuthStore } from '@/store/auth-store';
+import { MainLayout } from '@/components/layout/MainLayout';
+import {
+  Receipt,
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Edit,
+  Send,
+  DollarSign,
+  Calendar,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Download,
+  MoreHorizontal
+} from 'lucide-react';
+import { Invoice, InvoiceStatus } from '@/types/financial';
+
+export default function InvoicesPage() {
+  const { user } = useAuthStore();
+  const {
+    invoices,
+    getInvoicesByStatus,
+    getOverdueInvoices,
+    searchInvoices,
+    markInvoiceAsSent,
+    updateInvoiceStatus,
+    getTotalRevenue,
+    getTotalOutstanding,
+    getOverdueAmount
+  } = useInvoiceStore();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+
+  useEffect(() => {
+    let filtered = invoices;
+
+    if (searchQuery.trim()) {
+      filtered = searchInvoices(searchQuery.trim());
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(invoice => invoice.status === statusFilter);
+    }
+
+    setFilteredInvoices(filtered);
+  }, [invoices, searchQuery, statusFilter, searchInvoices]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getStatusIcon = (status: InvoiceStatus) => {
+    switch (status) {
+      case 'draft':
+        return <Edit className="w-4 h-4" />;
+      case 'sent':
+        return <Send className="w-4 h-4" />;
+      case 'paid':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'overdue':
+        return <AlertTriangle className="w-4 h-4" />;
+      case 'cancelled':
+        return <XCircle className="w-4 h-4" />;
+      case 'partial':
+        return <Clock className="w-4 h-4" />;
+      default:
+        return <Receipt className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusColor = (status: InvoiceStatus) => {
+    switch (status) {
+      case 'draft':
+        return 'bg-gray-100 text-gray-800';
+      case 'sent':
+        return 'bg-blue-100 text-blue-800';
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'overdue':
+        return 'bg-red-100 text-red-800';
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800';
+      case 'partial':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const isOverdue = (invoice: Invoice) => {
+    return new Date(invoice.dueDate) < new Date() &&
+           invoice.status !== 'paid' &&
+           invoice.status !== 'cancelled';
+  };
+
+  // Summary statistics
+  const totalInvoices = invoices.length;
+  const draftInvoices = getInvoicesByStatus('draft').length;
+  const paidInvoices = getInvoicesByStatus('paid').length;
+  const overdueInvoices = getOverdueInvoices().length;
+
+  const totalRevenue = getTotalRevenue();
+  const totalOutstanding = getTotalOutstanding();
+  const overdueAmount = getOverdueAmount();
+
+  if (!user) {
+    return <div>Please log in to view invoices.</div>;
+  }
+
+  return (
+    <MainLayout>
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
+              <p className="text-gray-600 mt-2">
+                Manage your invoices and track payments
+              </p>
+            </div>
+
+            <Button className="mt-4 md:mt-0">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Invoice
+            </Button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+                <Receipt className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalInvoices}</div>
+                <p className="text-xs text-gray-500">
+                  {draftInvoices} drafts, {paidInvoices} paid
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(totalRevenue)}
+                </div>
+                <p className="text-xs text-gray-500">
+                  From paid invoices
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+                <Clock className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">
+                  {formatCurrency(totalOutstanding)}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Awaiting payment
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-gray-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(overdueAmount)}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {overdueInvoices} invoices
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search invoices by customer, invoice number..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as InvoiceStatus | 'all')}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+                <SelectItem value="partial">Partial</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Invoices Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Invoices ({filteredInvoices.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredInvoices.length === 0 ? (
+                <div className="text-center py-8">
+                  <Receipt className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices found</h3>
+                  <p className="text-gray-600">
+                    {searchQuery ? 'Try adjusting your search criteria.' : 'Create your first invoice to get started.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium">Invoice #</th>
+                        <th className="text-left py-3 px-4 font-medium">Customer</th>
+                        <th className="text-left py-3 px-4 font-medium">Issue Date</th>
+                        <th className="text-left py-3 px-4 font-medium">Due Date</th>
+                        <th className="text-left py-3 px-4 font-medium">Amount</th>
+                        <th className="text-left py-3 px-4 font-medium">Status</th>
+                        <th className="text-left py-3 px-4 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredInvoices.map((invoice) => (
+                        <tr key={invoice.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="font-medium">{invoice.invoiceNumber}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-medium">{invoice.customerName}</div>
+                            <div className="text-sm text-gray-600">{invoice.customerEmail}</div>
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {formatDate(invoice.issueDate)}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className={`text-sm ${isOverdue(invoice) ? 'text-red-600 font-medium' : ''}`}>
+                              {formatDate(invoice.dueDate)}
+                              {isOverdue(invoice) && (
+                                <div className="text-xs text-red-600">Overdue</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-medium">{formatCurrency(invoice.total)}</div>
+                            {invoice.paidAmount > 0 && (
+                              <div className="text-xs text-green-600">
+                                {formatCurrency(invoice.paidAmount)} paid
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge className={`${getStatusColor(invoice.status)} flex items-center gap-1 w-fit`}>
+                              {getStatusIcon(invoice.status)}
+                              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="ghost">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost">
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+    </MainLayout>
+  );
+}

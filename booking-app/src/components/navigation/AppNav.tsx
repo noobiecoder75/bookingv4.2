@@ -13,7 +13,12 @@ import {
   LogOut,
   Sparkles,
   Menu,
-  X
+  X,
+  TrendingUp,
+  Receipt,
+  CreditCard,
+  DollarSign,
+  PieChart
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -46,6 +51,30 @@ export function AppNav() {
       label: 'Timeline',
       icon: Calendar,
       active: pathname === '/timeline'
+    },
+    {
+      href: '/finances',
+      label: 'Finances',
+      icon: TrendingUp,
+      active: pathname?.startsWith('/finances')
+    },
+    {
+      href: '/invoices',
+      label: 'Invoices',
+      icon: Receipt,
+      active: pathname?.startsWith('/invoices')
+    },
+    {
+      href: '/commissions',
+      label: 'Commissions',
+      icon: DollarSign,
+      active: pathname?.startsWith('/commissions')
+    },
+    {
+      href: '/expenses',
+      label: 'Expenses',
+      icon: CreditCard,
+      active: pathname?.startsWith('/expenses')
     },
     {
       href: '/quote-wizard',

@@ -3,78 +3,12 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 214 95% 59%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 262 83% 68%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 189 100% 43%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 214 95% 59%;
-    --radius: 0.75rem;
-    
-    /* Modern color palette */
-    --blue-500: 214 95% 59%;
-    --blue-600: 214 95% 53%;
-    --purple-500: 262 83% 68%;
-    --purple-600: 262 83% 58%;
-    --cyan-500: 189 100% 43%;
-    --emerald-500: 160 84% 39%;
-    --amber-500: 43 96% 56%;
-    --rose-500: 351 95% 64%;
-    
-    /* Glass effect variables */
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--purple-500)));
-    --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-  }
-}
-
-@layer base {
   * {
-    @apply border-border;
+    border-color: rgb(229 231 235); /* border-gray-200 */
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: rgb(255 255 255); /* bg-white */
+    color: rgb(17 24 39); /* text-gray-900 */
   }
 }
 
@@ -164,20 +98,20 @@
 @layer components {
   /* Glassmorphism Effects */
   .glass {
-    background: var(--glass-bg);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
   }
-  
+
   .glass-white {
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.25);
   }
-  
+
   .glass-card {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(16px);
@@ -190,33 +124,33 @@
   .shadow-soft {
     box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
   }
-  
+
   .shadow-medium {
     box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
-  
+
   .shadow-strong {
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 4px 15px -2px rgba(0, 0, 0, 0.08);
   }
 
   /* Gradient Backgrounds */
   .bg-gradient-primary {
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, rgb(59 130 246), rgb(147 51 234));
   }
-  
+
   .bg-gradient-hero {
-    background: var(--gradient-hero);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
-  
+
   .bg-gradient-card {
-    background: var(--gradient-card);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
   }
 
   /* Modern Borders */
   .border-glass {
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
-  
+
   .border-soft {
     border: 1px solid rgba(0, 0, 0, 0.05);
   }
@@ -225,16 +159,16 @@
   .hover-lift {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .hover-lift:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.2);
   }
-  
+
   .hover-glow {
     transition: all 0.3s ease;
   }
-  
+
   .hover-glow:hover {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
@@ -247,7 +181,7 @@
     color: white;
     transition: all 0.3s ease;
   }
-  
+
   .btn-glass:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.3);
@@ -258,14 +192,14 @@
   .transition-smooth {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .transition-bounce {
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   /* Typography Enhancements */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--purple-500)));
+    background: linear-gradient(135deg, rgb(59 130 246), rgb(147 51 234));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
