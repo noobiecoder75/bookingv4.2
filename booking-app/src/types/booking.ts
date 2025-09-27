@@ -187,8 +187,11 @@ export interface APISearchRequest {
   type: 'flight' | 'hotel' | 'activity' | 'transfer';
   origin?: string;
   destination?: string;
-  departureDate?: string;
-  returnDate?: string;
+  checkIn?: string;
+  checkOut?: string;
+  adults?: number;
+  children?: number;
+  rooms?: number;
   passengers?: {
     adults: number;
     children: number;

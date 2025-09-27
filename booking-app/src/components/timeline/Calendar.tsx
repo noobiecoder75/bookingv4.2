@@ -73,19 +73,37 @@ export function TimelineCalendar({ contactId, height = 600 }: TimelineCalendarPr
     };
   };
 
-  const CustomEvent = ({ event }: { event: CalendarEvent }) => (
-    <div className="flex items-center space-x-2">
-      <div 
-        className="w-2 h-2 rounded-full flex-shrink-0"
-        style={{ 
-          backgroundColor: event.resource 
-            ? getTravelItemColor(event.resource.type) 
-            : '#6B7280' 
-        }}
-      />
-      <span className="truncate text-xs">{event.title}</span>
-    </div>
-  );
+  const CustomEvent = ({ event }: { event: CalendarEvent }) => {
+    const isApiItem = event.resource?.source === 'api';
+    const apiProvider = event.resource?.apiProvider;
+
+    return (
+      <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
+          <div
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{
+              backgroundColor: event.resource
+                ? getTravelItemColor(event.resource.type)
+                : '#6B7280'
+            }}
+          />
+          {isApiItem && (
+            <div
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-blue-400"
+              title={`API sourced from ${apiProvider || 'external provider'}`}
+            />
+          )}
+        </div>
+        <span className="truncate text-xs">{event.title}</span>
+        {isApiItem && (
+          <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded uppercase font-medium">
+            API
+          </span>
+        )}
+      </div>
+    );
+  };
 
   const CustomToolbar = (toolbar: any) => {
     const goToBack = () => {

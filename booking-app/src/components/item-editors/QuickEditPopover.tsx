@@ -123,6 +123,10 @@ export function QuickEditPopover({
     }
   };
 
+  // Check if this is an API item (read-only)
+  const isApiItem = item.source === 'api';
+  const apiProvider = item.apiProvider;
+
   // Calculate safe position within viewport
   const safePosition = {
     left: Math.max(10, Math.min(position.x - 140, window.innerWidth - 290)), // Center horizontally, keep in bounds
@@ -132,15 +136,15 @@ export function QuickEditPopover({
   return (
     <>
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" 
+      <div
+        className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm"
         onClick={onCancel}
       />
-      
+
       {/* Popover */}
       <div
         ref={popoverRef}
-        className="fixed glass-card rounded-2xl shadow-strong border-glass p-6 min-w-[320px] z-50"
+        className="fixed bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-6 min-w-[320px] z-50"
         style={{
           left: safePosition.left,
           top: safePosition.top,
@@ -148,11 +152,29 @@ export function QuickEditPopover({
       >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h4 className="font-semibold text-gray-900">Quick Edit</h4>
+        <div className="flex items-center space-x-2">
+          <h4 className="font-semibold text-gray-900">
+            {isApiItem ? 'Hotel Details' : 'Quick Edit'}
+          </h4>
+          {isApiItem && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded uppercase font-medium">
+              {apiProvider || 'API'}
+            </span>
+          )}
+        </div>
         <Button variant="ghost" size="sm" onClick={onCancel} className="hover:bg-gray-100/50 transition-smooth">
           <X className="w-4 h-4" />
         </Button>
       </div>
+
+      {isApiItem && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            🔒 This hotel was booked through {apiProvider === 'hotelbeds' ? 'HotelBeds' : 'API'}.
+            Core details cannot be modified here. Contact support for changes.
+          </p>
+        </div>
+      )}
 
       {/* Quick Edit Fields */}
       <div className="space-y-3">
@@ -177,12 +199,16 @@ export function QuickEditPopover({
               </Button>
             </div>
           ) : (
-            <div 
-              className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
-              onClick={() => setEditField('name')}
+            <div
+              className={`flex-1 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent ${
+                isApiItem
+                  ? 'bg-gray-50 cursor-not-allowed'
+                  : 'cursor-pointer hover:bg-white/30 hover:border-glass'
+              }`}
+              onClick={isApiItem ? undefined : () => setEditField('name')}
             >
               <span className="text-sm truncate font-medium">{item.name}</span>
-              <Edit3 className="w-4 h-4 text-gray-400" />
+              {!isApiItem && <Edit3 className="w-4 h-4 text-gray-400" />}
             </div>
           )}
         </div>
@@ -223,17 +249,21 @@ export function QuickEditPopover({
                 </Button>
               </div>
             ) : (
-              <div 
-                className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
-                onClick={() => setEditField('date')}
+              <div
+                className={`flex-1 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent ${
+                  isApiItem
+                    ? 'bg-gray-50 cursor-not-allowed'
+                    : 'cursor-pointer hover:bg-white/30 hover:border-glass'
+                }`}
+                onClick={isApiItem ? undefined : () => setEditField('date')}
               >
                 <span className="text-sm font-medium">
                   {moment(item.startDate).format('MMM DD')}
-                  {item.endDate && moment(item.endDate).format('YYYY-MM-DD') !== moment(item.startDate).format('YYYY-MM-DD') && 
+                  {item.endDate && moment(item.endDate).format('YYYY-MM-DD') !== moment(item.startDate).format('YYYY-MM-DD') &&
                     ` - ${moment(item.endDate).format('MMM DD')}`
                   }
                 </span>
-                <Edit3 className="w-4 h-4 text-gray-400" />
+                {!isApiItem && <Edit3 className="w-4 h-4 text-gray-400" />}
               </div>
             )}
           </div>
@@ -272,15 +302,19 @@ export function QuickEditPopover({
                 </Button>
               </div>
             ) : (
-              <div 
-                className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
-                onClick={() => setEditField('time')}
+              <div
+                className={`flex-1 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent ${
+                  isApiItem
+                    ? 'bg-gray-50 cursor-not-allowed'
+                    : 'cursor-pointer hover:bg-white/30 hover:border-glass'
+                }`}
+                onClick={isApiItem ? undefined : () => setEditField('time')}
               >
                 <span className="text-sm font-medium">
                   {moment(item.startDate).format('HH:mm')}
                   {item.endDate && ` - ${moment(item.endDate).format('HH:mm')}`}
                 </span>
-                <Edit3 className="w-4 h-4 text-gray-400" />
+                {!isApiItem && <Edit3 className="w-4 h-4 text-gray-400" />}
               </div>
             )}
           </div>
@@ -309,27 +343,37 @@ export function QuickEditPopover({
               </Button>
             </div>
           ) : (
-            <div 
-              className="flex-1 cursor-pointer hover:bg-white/30 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent hover:border-glass"
-              onClick={() => setEditField('price')}
+            <div
+              className={`flex-1 p-3 rounded-lg flex items-center justify-between transition-smooth border border-transparent ${
+                isApiItem
+                  ? 'bg-gray-50 cursor-not-allowed'
+                  : 'cursor-pointer hover:bg-white/30 hover:border-glass'
+              }`}
+              onClick={isApiItem ? undefined : () => setEditField('price')}
             >
               <span className="text-sm font-semibold text-blue-700">
                 {formatCurrency(item.price * item.quantity)}
               </span>
-              <Edit3 className="w-4 h-4 text-gray-400" />
+              {!isApiItem && <Edit3 className="w-4 h-4 text-gray-400" />}
             </div>
           )}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex space-x-3 mt-6 pt-4 border-t border-glass">
-        <Button size="sm" variant="outline" onClick={onFullEdit} className="flex-1 hover-lift transition-smooth">
-          <Edit3 className="w-4 h-4 mr-2" />
-          Full Edit
-        </Button>
-        <Button size="sm" onClick={onCancel} className="flex-1 bg-blue-600 hover:bg-blue-700 hover-lift transition-smooth">
-          Done
+      <div className="flex space-x-3 mt-6 pt-4 border-t border-gray-200">
+        {!isApiItem && (
+          <Button size="sm" variant="outline" onClick={onFullEdit} className="flex-1 hover-lift transition-smooth">
+            <Edit3 className="w-4 h-4 mr-2" />
+            Full Edit
+          </Button>
+        )}
+        <Button
+          size="sm"
+          onClick={onCancel}
+          className={`${isApiItem ? 'w-full' : 'flex-1'} bg-blue-600 hover:bg-blue-700 hover-lift transition-smooth`}
+        >
+          {isApiItem ? 'Close' : 'Done'}
         </Button>
       </div>
       </div>

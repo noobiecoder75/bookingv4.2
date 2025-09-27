@@ -48,6 +48,8 @@ export interface TravelItem {
   price: number;
   quantity: number;
   details: Record<string, unknown>;
+  source?: 'api' | 'manual'; // Track if item came from API (HotelBeds, flights) or manual entry
+  apiProvider?: 'hotelbeds' | 'amadeus' | 'sabre'; // Which API provider if applicable
 }
 
 export interface FlightDetails {

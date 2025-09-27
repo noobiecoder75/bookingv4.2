@@ -4,6 +4,7 @@ import {
   APISearchRequest,
   APISearchResponse,
 } from '@/types/booking';
+import { SimplifiedHotel } from '@/types/hotelbeds';
 
 // Mock hotel data for development
 const mockHotels: EnhancedHotelDetails[] = [
@@ -106,15 +107,119 @@ const mockHotels: EnhancedHotelDetails[] = [
 ];
 
 export class HotelService {
+  constructor() {
+    // HotelBeds API calls are now handled by backend API routes
+    console.log('HotelService initialized - using backend API proxy');
+  }
+
+  private convertSimplifiedToEnhanced(hotel: SimplifiedHotel, nights: number): EnhancedHotelDetails {
+    return {
+      hotelName: hotel.name,
+      hotelChain: 'Unknown',
+      hotelRating: hotel.rating || 3,
+      location: {
+        address: hotel.location,
+        city: hotel.location.split(',')[0] || '',
+        country: hotel.location.split(',')[1]?.trim() || '',
+        coordinates: hotel.coordinates || {
+          latitude: 0,
+          longitude: 0
+        }
+      },
+      checkIn: {
+        date: hotel.checkIn,
+        time: '15:00'
+      },
+      checkOut: {
+        date: hotel.checkOut,
+        time: '11:00'
+      },
+      nights,
+      roomType: hotel.roomType || 'Standard Room',
+      roomDescription: hotel.description || 'Comfortable accommodation',
+      bedConfiguration: '1 King Bed',
+      maxOccupancy: 2,
+      guests: {
+        adults: 2,
+        children: 0
+      },
+      mealPlan: 'room-only',
+      amenities: hotel.amenities || ['Free WiFi', 'Air Conditioning'],
+      cancellationPolicy: 'Please check with hotel for cancellation policy',
+      totalPrice: hotel.price,
+      priceBreakdown: {
+        roomRate: Math.round(hotel.price * 0.85),
+        taxes: Math.round(hotel.price * 0.12),
+        fees: Math.round(hotel.price * 0.03)
+      }
+    };
+  }
+
   async searchHotels(request: APISearchRequest): Promise<APISearchResponse<EnhancedHotelDetails>> {
-    // Simulate API call with mock data
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let filteredHotels = [...mockHotels];
+    console.log('Hotel search request:', request);
+
+    try {
+      // Call our internal API route
+      const checkIn = request.checkIn;
+      const checkOut = request.checkOut;
+      const adults = request.passengers?.adults || request.adults || 2;
+      const children = request.passengers?.children || request.children || 0;
+      const rooms = request.rooms || 1;
+
+      if (!request.destination || !checkIn || !checkOut) {
+        throw new Error('Destination, check-in and check-out dates are required');
+      }
+
+      console.log('Calling internal hotel search API with:', {
+        destination: request.destination,
+        checkIn,
+        checkOut,
+        adults,
+        children,
+        rooms
+      });
+
+      const response = await fetch('/api/hotels/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          destination: request.destination,
+          checkIn,
+          checkOut,
+          adults,
+          children,
+          rooms,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Hotel API Error:', errorData);
+
+        // Provide detailed error information based on error type
+        if (errorData.errorType === 'MISSING_CREDENTIALS') {
+          throw new Error(`Configuration Error: ${errorData.error}\n\nSolution: ${errorData.details?.suggestion}`);
+        } else if (errorData.errorType === 'HOTELBEDS_API_ERROR') {
+          throw new Error(`HotelBeds API Error: ${errorData.details?.message}\n\nSuggestion: ${errorData.details?.suggestion}`);
+        } else {
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+      }
+
+      const apiResponse = await response.json();
+      console.log('✅ Internal API response:', apiResponse.source, 'returned', apiResponse.data?.length || 0, 'hotels');
+
+      if (apiResponse.success && apiResponse.data) {
+        const nights = this.calculateNights(checkIn, checkOut);
+        let enhancedHotels = apiResponse.data.map((hotel: SimplifiedHotel) =>
+          this.convertSimplifiedToEnhanced(hotel, nights)
+        );
 
         // Apply filters
         if (request.filters?.priceRange) {
-          filteredHotels = filteredHotels.filter(
+          enhancedHotels = enhancedHotels.filter(
             hotel =>
               hotel.totalPrice >= (request.filters?.priceRange?.min || 0) &&
               hotel.totalPrice <= (request.filters?.priceRange?.max || Infinity)
@@ -122,22 +227,28 @@ export class HotelService {
         }
 
         if (request.filters?.hotelRating) {
-          filteredHotels = filteredHotels.filter(
+          enhancedHotels = enhancedHotels.filter(
             hotel => hotel.hotelRating >= (request.filters?.hotelRating || 0)
           );
         }
 
-        resolve({
+        return {
           success: true,
-          data: filteredHotels,
+          data: enhancedHotels,
           metadata: {
-            totalResults: filteredHotels.length,
-            searchId: crypto.randomUUID(),
-            timestamp: new Date().toISOString(),
+            totalResults: enhancedHotels.length,
+            searchId: apiResponse.metadata?.searchId || Math.random().toString(36).substring(2, 15),
+            timestamp: apiResponse.metadata?.timestamp || new Date().toISOString(),
+            source: apiResponse.source,
           },
-        });
-      }, 1000);
-    });
+        };
+      } else {
+        throw new Error(apiResponse.error || 'Invalid API response');
+      }
+    } catch (error) {
+      console.error('Hotel search API error:', error);
+      throw error;
+    }
   }
 
   async getHotelDetails(hotelId: string): Promise<EnhancedHotelDetails | null> {

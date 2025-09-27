@@ -178,40 +178,42 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="space-y-8">
       {/* Progress Steps */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
+      <div className="glass-card rounded-2xl p-6 hover-lift transition-smooth">
+        <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
           {steps.map((step, index) => (
             <div
               key={step.id}
               className={`flex items-center ${
-                index < steps.length - 1 ? 'flex-1' : ''
-              }`}
+                index < steps.length - 1 ? 'md:flex-1' : ''
+              } w-full md:w-auto`}
             >
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center flex-1 md:flex-initial">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-medium shadow-medium transition-smooth hover-lift ${
                     index <= currentStepIndex
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-600'
+                      ? 'bg-gradient-primary text-white'
+                      : 'bg-white text-gray-600 border border-gray-200'
                   }`}
                 >
                   {index + 1}
                 </div>
-                <div className="mt-2 text-center">
-                  <div className="text-sm font-medium text-gray-900">
+                <div className="mt-3 text-center">
+                  <div className={`text-sm font-medium ${
+                    index <= currentStepIndex ? 'text-gray-900' : 'text-gray-600'
+                  }`}>
                     {step.label}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 mt-1 hidden md:block">
                     {step.description}
                   </div>
                 </div>
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`flex-1 h-0.5 mx-4 ${
-                    index < currentStepIndex ? 'bg-blue-600' : 'bg-gray-200'
+                  className={`hidden md:flex flex-1 h-0.5 mx-6 rounded-full transition-smooth ${
+                    index < currentStepIndex ? 'bg-gradient-primary' : 'bg-gray-200'
                   }`}
                 />
               )}
@@ -221,53 +223,57 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg border">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStepIndex === 0}
-          >
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Previous
-          </Button>
+      <div className="glass-card rounded-2xl p-6 hover-lift transition-smooth">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStepIndex === 0}
+              className="shadow-soft hover-lift transition-smooth"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Previous
+            </Button>
 
-          <Button
-            variant="ghost"
-            onClick={handleSaveAndExit}
-            className="text-gray-600"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save & Exit
-          </Button>
-        </div>
+            <Button
+              variant="ghost"
+              onClick={handleSaveAndExit}
+              className="text-gray-600 hover-lift transition-smooth"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save & Exit
+            </Button>
+          </div>
 
-        <div className="flex items-center space-x-3">
-          <Button
-            onClick={handleNext}
-            disabled={
-              currentStepIndex === steps.length - 1 ||
-              (currentStep === 'contact' && !selectedContact) ||
-              (currentStep === 'details' && !currentQuote)
-            }
-          >
-            Next
-            <ChevronRight className="w-4 h-4 ml-2" />
-          </Button>
+          <div className="flex items-center space-x-3 w-full sm:w-auto">
+            <Button
+              onClick={handleNext}
+              disabled={
+                currentStepIndex === steps.length - 1 ||
+                (currentStep === 'contact' && !selectedContact) ||
+                (currentStep === 'details' && !currentQuote)
+              }
+              className="shadow-soft hover-lift transition-smooth bg-gradient-primary hover:shadow-medium"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
 
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/quotes')}
-            className="text-gray-600"
-          >
-            <X className="w-4 h-4 mr-2" />
-            Cancel
-          </Button>
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/quotes')}
+              className="text-gray-600 hover-lift transition-smooth"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Step Content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="glass-card rounded-2xl p-8 shadow-medium hover-lift transition-smooth">
         {renderStepContent()}
       </div>
     </div>

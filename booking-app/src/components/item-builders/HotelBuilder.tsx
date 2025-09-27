@@ -88,8 +88,14 @@ export function HotelBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }:
       const response = await hotelService.searchHotels({
         type: 'hotel',
         destination: formData.destination,
-        departureDate: formData.checkInDate,
-        returnDate: formData.checkOutDate,
+        checkIn: formData.checkInDate,
+        checkOut: formData.checkOutDate,
+        passengers: {
+          adults: formData.adults,
+          children: formData.children,
+          infants: 0,
+        },
+        rooms: 1, // For now, assume 1 room - can be enhanced later
         filters: {
           hotelRating: formData.hotelRating,
           priceRange: formData.priceRange,
@@ -102,6 +108,17 @@ export function HotelBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }:
       }
     } catch (error) {
       console.error('Hotel search failed:', error);
+
+      // Show detailed error message to user
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+      if (errorMessage.includes('Configuration Error')) {
+        alert(`🔧 Setup Required:\n\n${errorMessage}\n\nContact your developer to configure the HotelBeds API credentials.`);
+      } else if (errorMessage.includes('HotelBeds API Error')) {
+        alert(`🔗 API Error:\n\n${errorMessage}\n\nThis might be a temporary issue. Please try again in a few minutes.`);
+      } else {
+        alert(`❌ Search Failed:\n\n${errorMessage}\n\nPlease check your search criteria and try again.`);
+      }
     } finally {
       setIsSearching(false);
     }
@@ -121,6 +138,8 @@ export function HotelBuilder({ onSubmit, onCancel, tripStartDate, tripEndDate }:
       endDate: `${formData.checkOutDate}T${formData.checkOutTime}`,
       price: selectedHotel.totalPrice,
       quantity: 1,
+      source: 'api' as const,
+      apiProvider: 'hotelbeds' as const,
       details: {
         ...selectedHotel,
         checkIn: {
