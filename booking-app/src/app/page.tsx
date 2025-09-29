@@ -1,14 +1,17 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { 
-  Calendar, 
-  Users, 
-  FileText, 
-  Clock, 
-  ArrowRight, 
-  Sparkles, 
-  Zap, 
-  Globe, 
+import { ModernButton } from '@/components/ui/modern-button';
+import { ModernCard, ModernCardContent } from '@/components/ui/modern-card';
+import { DarkModeToggle } from '@/components/ui/dark-mode-toggle';
+import {
+  Calendar,
+  Users,
+  FileText,
+  Clock,
+  ArrowRight,
+  Sparkles,
+  Zap,
+  Globe,
   Star,
   CheckCircle,
   BarChart3,
@@ -18,29 +21,31 @@ import {
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-white border-b border-glass">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">BookingGPT</span>
-              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">v4.2</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-gray-100">BookingGPT</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">v4.2</span>
             </div>
-            
+
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</Link>
-              <Link href="/quotes" className="text-gray-600 hover:text-gray-900 transition-colors">Dashboard</Link>
-              <Link href="/contacts" className="text-gray-600 hover:text-gray-900 transition-colors">Contacts</Link>
-              <Button variant="outline" size="sm" asChild>
+              <Link href="#features" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Features</Link>
+              <Link href="/quotes" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Dashboard</Link>
+              <Link href="/contacts" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Contacts</Link>
+              <Link href="/modern-ui" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">Modern UI</Link>
+              <DarkModeToggle />
+              <ModernButton variant="outline" size="sm" asChild>
                 <Link href="/login">Sign In</Link>
-              </Button>
-              <Button size="sm" className="bg-gradient-primary hover-glow" asChild>
+              </ModernButton>
+              <ModernButton variant="primary" size="sm" asChild>
                 <Link href="/quote-wizard">Get Started</Link>
-              </Button>
+              </ModernButton>
             </div>
           </div>
         </div>
@@ -48,7 +53,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="pt-24 pb-12 bg-gradient-hero relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/20 dark:to-black/20"></div>
         <div className="container mx-auto px-4 relative">
           <div className="text-center max-w-4xl mx-auto">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-2 mb-8">
@@ -68,19 +73,19 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+              <ModernButton size="lg" className="text-lg px-8 py-4" asChild>
                 <Link href="/quote-wizard">
                   <Zap className="w-5 h-5 mr-2" />
                   Start Free Trial
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-lg px-8 py-4" asChild>
+              </ModernButton>
+              <ModernButton size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-lg px-8 py-4" asChild>
                 <Link href="/demo">
                   <FileText className="w-5 h-5 mr-2" />
                   View Demo
                 </Link>
-              </Button>
+              </ModernButton>
             </div>
             
             <div className="flex items-center justify-center gap-8 text-white/80 text-sm">
@@ -106,7 +111,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
+      <section id="features" className="py-20 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -119,68 +124,68 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-            <div className="glass-card rounded-2xl p-8 hover-lift group">
+            <ModernCard variant="elevated" className="p-8 hover-lift group">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Contact Management</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Smart Contact Management</h3>
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Complete CRM with intelligent search, tagging, and relationship mapping for seamless customer management
               </p>
-            </div>
+            </ModernCard>
 
-            <div className="glass-card rounded-2xl p-8 hover-lift group">
+            <ModernCard variant="elevated" className="p-8 hover-lift group">
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Calendar className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Visual Timeline</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Visual Timeline</h3>
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Professional calendar interface powered by react-big-calendar for intuitive itinerary visualization
               </p>
-            </div>
+            </ModernCard>
 
-            <div className="glass-card rounded-2xl p-8 hover-lift group">
+            <ModernCard variant="elevated" className="p-8 hover-lift group">
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <FileText className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Quote Wizard</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Quote Wizard</h3>
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Step-by-step intelligent quote builder with flights, hotels, activities, and automated pricing
               </p>
-            </div>
+            </ModernCard>
 
-            <div className="glass-card rounded-2xl p-8 hover-lift group">
+            <ModernCard variant="elevated" className="p-8 hover-lift group">
               <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Clock className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Travel Items</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Travel Items</h3>
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Color-coded management system for flights, accommodations, activities, and transfers with drag-and-drop
               </p>
-            </div>
+            </ModernCard>
           </div>
 
           {/* Stats Section */}
-          <div className="bg-white rounded-2xl shadow-soft p-8 md:p-12">
+          <ModernCard variant="elevated" className="p-8 md:p-12">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">500+</div>
-                <div className="text-gray-600">Travel Agencies</div>
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">500+</div>
+                <div className="text-gray-600 dark:text-gray-400">Travel Agencies</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">50k+</div>
-                <div className="text-gray-600">Quotes Generated</div>
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">50k+</div>
+                <div className="text-gray-600 dark:text-gray-400">Quotes Generated</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">99.9%</div>
-                <div className="text-gray-600">Uptime</div>
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">99.9%</div>
+                <div className="text-gray-600 dark:text-gray-400">Uptime</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">4.9★</div>
-                <div className="text-gray-600">Customer Rating</div>
+                <div className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">4.9★</div>
+                <div className="text-gray-600 dark:text-gray-400">Customer Rating</div>
               </div>
             </div>
-          </div>
+          </ModernCard>
         </div>
       </section>
 
@@ -196,27 +201,27 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+            <ModernButton size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-lg px-8 py-4" asChild>
               <Link href="/contacts">
                 <Users className="w-5 h-5 mr-2" />
                 Manage Contacts
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
-            </Button>
-            <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+            </ModernButton>
+            <ModernButton size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-lg px-8 py-4" asChild>
               <Link href="/quotes">
                 <BarChart3 className="w-5 h-5 mr-2" />
                 Quote Dashboard
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
-            </Button>
-            <Button size="lg" className="btn-glass text-lg px-8 py-4" asChild>
+            </ModernButton>
+            <ModernButton size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 text-lg px-8 py-4" asChild>
               <Link href="/quote-wizard">
                 <FileText className="w-5 h-5 mr-2" />
                 Create Quote
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
-            </Button>
+            </ModernButton>
           </div>
         </div>
         

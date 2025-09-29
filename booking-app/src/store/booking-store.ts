@@ -154,11 +154,11 @@ export const useBookingStore = create<BookingStore>()(
       confirmBooking: async (bookingId, _paymentDetails) => {
         // Simulate booking confirmation
         const pendingBooking = get().pendingBookings.find((b) => b.id === bookingId);
-        
+
         if (!pendingBooking) {
           throw new Error('Booking not found');
         }
-        
+
         const confirmation: BookingConfirmation = {
           bookingId,
           bookingReference: `REF${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
@@ -182,12 +182,31 @@ export const useBookingStore = create<BookingStore>()(
             phone: '+1234567890',
           },
         };
-        
+
         set((state) => ({
           bookingConfirmations: [...state.bookingConfirmations, confirmation],
           pendingBookings: state.pendingBookings.filter((b) => b.id !== bookingId),
         }));
-        
+
+        // Auto-generate invoice from booking confirmation
+        try {
+          const { useInvoiceStore } = await import('./invoice-store');
+          const { useCommissionStore } = await import('./commission-store');
+
+          const invoiceStore = useInvoiceStore.getState();
+          const commissionStore = useCommissionStore.getState();
+
+          // Generate invoice from booking
+          const invoiceId = invoiceStore.generateInvoiceFromBooking(confirmation);
+
+          // Generate commission record if invoice was created
+          if (invoiceId) {
+            commissionStore.generateCommissionFromBookingConfirmation(confirmation, invoiceId);
+          }
+        } catch (error) {
+          console.error('Failed to auto-generate invoice/commission:', error);
+        }
+
         return confirmation;
       },
       

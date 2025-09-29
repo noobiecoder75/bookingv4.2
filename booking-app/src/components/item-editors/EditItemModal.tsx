@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { ModernButton } from '@/components/ui/modern-button';
+import { ModernCard } from '@/components/ui/modern-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
@@ -127,26 +128,26 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-50/80 via-blue-50/80 to-purple-50/80 backdrop-filter backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="glass-card rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-strong border-glass">
-        <div className="sticky top-0 glass-white border-b border-glass p-6 z-10 rounded-t-2xl">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <ModernCard variant="elevated" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-6 z-10 rounded-t-2xl">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold flex items-center space-x-2">
+            <h3 className="text-xl font-semibold flex items-center space-x-2 text-gray-900 dark:text-gray-100">
               <div style={{ color: getTravelItemColor(item.type) }}>
                 {getItemIcon()}
               </div>
               <span>Edit {item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>
             </h3>
-            <Button variant="ghost" size="sm" onClick={onCancel}>
+            <ModernButton variant="ghost" size="sm" onClick={onCancel}>
               <X className="w-4 h-4" />
-            </Button>
+            </ModernButton>
           </div>
         </div>
 
         <div className="p-6 space-y-6">
           {/* Basic Information */}
-          <div className="glass-card rounded-2xl p-6 shadow-medium border-glass space-y-4">
-            <h4 className="font-semibold text-gray-900">Basic Information</h4>
+          <ModernCard variant="default" className="p-6 space-y-4">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100">Basic Information</h4>
             
             <div>
               <Label htmlFor="name">Name</Label>
@@ -273,16 +274,16 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
               </div>
             </div>
 
-            <div className="p-4 glass-white rounded-xl border-glass">
-              <p className="text-sm font-medium text-blue-700">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 Total: {formatCurrency(parseFloat(formData.price || '0') * parseInt(formData.quantity || '1'))}
               </p>
             </div>
-          </div>
+          </ModernCard>
 
           {/* Type-specific Details */}
-          <div className="glass-card rounded-2xl p-6 shadow-medium border-glass space-y-4">
-            <h4 className="font-semibold text-gray-900">{item.type.charAt(0).toUpperCase() + item.type.slice(1)} Details</h4>
+          <ModernCard variant="default" className="p-6 space-y-4">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100">{item.type.charAt(0).toUpperCase() + item.type.slice(1)} Details</h4>
 
             {item.type === 'flight' && (
               <div className="space-y-4">
@@ -470,33 +471,33 @@ export function EditItemModal({ item, onSave, onDelete, onCancel }: EditItemModa
                 </div>
               </div>
             )}
-          </div>
+          </ModernCard>
 
           {/* Action Buttons */}
-          <div className="glass-card rounded-2xl p-6 shadow-medium border-glass">
+          <ModernCard variant="default" className="p-6">
             <div className="flex justify-between items-center">
-              <Button 
+              <ModernButton 
                 variant="outline" 
                 onClick={handleDelete}
-                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-smooth"
+                className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Item
-              </Button>
+              </ModernButton>
 
               <div className="flex space-x-3">
-                <Button variant="outline" onClick={onCancel} className="hover-lift transition-smooth">
+                <ModernButton variant="outline" onClick={onCancel}>
                   Cancel
-                </Button>
-                <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 hover-lift transition-smooth">
+                </ModernButton>
+                <ModernButton onClick={handleSave}>
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
-                </Button>
+                </ModernButton>
               </div>
             </div>
-          </div>
+          </ModernCard>
         </div>
-      </div>
+      </ModernCard>
     </div>
   );
 }

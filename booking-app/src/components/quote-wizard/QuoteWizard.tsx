@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useContactStore } from '@/store/contact-store';
 import { useQuoteStore } from '@/store/quote-store';
 import { Contact, TravelQuote } from '@/types';
-import { Button } from '@/components/ui/button';
+import { ModernButton } from '@/components/ui/modern-button';
+import { ModernCard } from '@/components/ui/modern-card';
 import { ContactSelection } from './ContactSelection';
 import { QuoteDetails } from './QuoteDetails';
 import { TravelItems } from './TravelItems';
@@ -180,7 +181,7 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
   return (
     <div className="space-y-8">
       {/* Progress Steps */}
-      <div className="glass-card rounded-2xl p-6 hover-lift transition-smooth">
+      <ModernCard variant="elevated" className="p-6">
         <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
           {steps.map((step, index) => (
             <div
@@ -191,91 +192,87 @@ export function QuoteWizard({ editQuoteId }: QuoteWizardProps) {
             >
               <div className="flex flex-col items-center flex-1 md:flex-initial">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-medium shadow-medium transition-smooth hover-lift ${
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-medium transition-colors ${
                     index <= currentStepIndex
-                      ? 'bg-gradient-primary text-white'
-                      : 'bg-white text-gray-600 border border-gray-200'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
                   }`}
                 >
                   {index + 1}
                 </div>
                 <div className="mt-3 text-center">
                   <div className={`text-sm font-medium ${
-                    index <= currentStepIndex ? 'text-gray-900' : 'text-gray-600'
+                    index <= currentStepIndex ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'
                   }`}>
                     {step.label}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1 hidden md:block">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 hidden md:block">
                     {step.description}
                   </div>
                 </div>
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`hidden md:flex flex-1 h-0.5 mx-6 rounded-full transition-smooth ${
-                    index < currentStepIndex ? 'bg-gradient-primary' : 'bg-gray-200'
+                  className={`hidden md:flex flex-1 h-0.5 mx-6 rounded-full transition-colors ${
+                    index < currentStepIndex ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                   }`}
                 />
               )}
             </div>
           ))}
         </div>
-      </div>
+      </ModernCard>
 
       {/* Navigation */}
-      <div className="glass-card rounded-2xl p-6 hover-lift transition-smooth">
+      <ModernCard variant="default" className="p-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-3 w-full sm:w-auto">
-            <Button
+            <ModernButton
               variant="outline"
               onClick={handlePrevious}
               disabled={currentStepIndex === 0}
-              className="shadow-soft hover-lift transition-smooth"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Previous
-            </Button>
+            </ModernButton>
 
-            <Button
+            <ModernButton
               variant="ghost"
               onClick={handleSaveAndExit}
-              className="text-gray-600 hover-lift transition-smooth"
             >
               <Save className="w-4 h-4 mr-2" />
               Save & Exit
-            </Button>
+            </ModernButton>
           </div>
 
           <div className="flex items-center space-x-3 w-full sm:w-auto">
-            <Button
+            <ModernButton
               onClick={handleNext}
               disabled={
                 currentStepIndex === steps.length - 1 ||
                 (currentStep === 'contact' && !selectedContact) ||
                 (currentStep === 'details' && !currentQuote)
               }
-              className="shadow-soft hover-lift transition-smooth bg-gradient-primary hover:shadow-medium"
             >
               Next
               <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
+            </ModernButton>
 
-            <Button
+            <ModernButton
               variant="ghost"
               onClick={() => router.push('/quotes')}
-              className="text-gray-600 hover-lift transition-smooth"
             >
               <X className="w-4 h-4 mr-2" />
               Cancel
-            </Button>
+            </ModernButton>
           </div>
         </div>
-      </div>
+      </ModernCard>
 
       {/* Step Content */}
-      <div className="glass-card rounded-2xl p-8 shadow-medium hover-lift transition-smooth">
+      <ModernCard variant="elevated" className="p-8">
         {renderStepContent()}
-      </div>
+      </ModernCard>
     </div>
   );
 }

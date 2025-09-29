@@ -297,29 +297,10 @@ export const useQuoteStore = create<QuoteStore>()(
         }
 
         try {
-          // In a real implementation, this would:
-          // 1. Import the invoice store and contact store
-          // 2. Get the customer data from the contact store
-          // 3. Generate invoice items from quote items
-          // 4. Calculate totals with taxes
-          // 5. Create commission records for agents
-
-          // For now, we'll create a placeholder implementation
-          console.log('Generating invoice for accepted quote:', quoteId);
-
-          // This would be the actual invoice generation call:
-          // const invoiceStore = useInvoiceStore.getState();
-          // const contactStore = useContactStore.getState();
-          // const customer = contactStore.getContactById(quote.contactId);
-          //
-          // return invoiceStore.generateInvoiceFromQuote(quoteId, {
-          //   customerId: quote.contactId,
-          //   customerName: `${customer.firstName} ${customer.lastName}`,
-          //   customerEmail: customer.email,
-          //   customerAddress: customer.address
-          // });
-
-          return crypto.randomUUID(); // Placeholder return
+          // For now, just return a placeholder ID to avoid circular dependencies
+          // The finances page will handle this differently
+          console.log('Invoice generation requested for quote:', quoteId);
+          return crypto.randomUUID();
         } catch (error) {
           console.error('Failed to generate invoice from quote:', error);
           return null;

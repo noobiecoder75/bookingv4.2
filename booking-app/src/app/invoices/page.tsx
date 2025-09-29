@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useInvoiceStore } from '@/store/invoice-store';
 import { useAuthStore } from '@/store/auth-store';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { InvoiceModal } from '@/components/invoices/InvoiceModal';
+import { generateInvoicePDF } from '@/lib/pdf-generator';
 import {
   Receipt,
   Search,
@@ -36,6 +38,7 @@ export default function InvoicesPage() {
     getOverdueInvoices,
     searchInvoices,
     markInvoiceAsSent,
+    markInvoiceAsPaid,
     updateInvoiceStatus,
     getTotalRevenue,
     getTotalOutstanding,
@@ -45,6 +48,8 @@ export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   useEffect(() => {
     let filtered = invoices;
@@ -69,6 +74,80 @@ export default function InvoicesPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // Action handlers
+  const handleViewInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsInvoiceModalOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    // Navigate to edit page or show edit modal
+    alert(`Edit functionality for invoice ${invoice.invoiceNumber} - Coming soon!`);
+  };
+
+  const handleDownloadInvoice = async (invoice: Invoice) => {
+    try {
+      await generateInvoicePDF(invoice);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
+  const handleInvoiceMenu = (invoice: Invoice) => {
+    const actions = [];
+
+    if (invoice.status === 'draft') {
+      actions.push('Send Invoice');
+    }
+    if (invoice.status === 'sent' || invoice.status === 'partial') {
+      actions.push('Mark as Paid');
+    }
+    if (invoice.status !== 'cancelled') {
+      actions.push('Cancel Invoice');
+    }
+    actions.push('Duplicate Invoice', 'Delete Invoice');
+
+    const choice = prompt(`Choose action for ${invoice.invoiceNumber}:\n${actions.map((action, i) => `${i + 1}. ${action}`).join('\n')}`);
+
+    if (choice) {
+      const actionIndex = parseInt(choice) - 1;
+      const selectedAction = actions[actionIndex];
+
+      switch (selectedAction) {
+        case 'Send Invoice':
+          markInvoiceAsSent(invoice.id);
+          alert('Invoice marked as sent!');
+          break;
+        case 'Mark as Paid':
+          markInvoiceAsPaid(invoice.id, 'bank_transfer', `TXN-${Date.now()}`);
+          alert('Invoice marked as paid!');
+          break;
+        case 'Cancel Invoice':
+          updateInvoiceStatus(invoice.id, 'cancelled');
+          alert('Invoice cancelled!');
+          break;
+        case 'Duplicate Invoice':
+          alert('Duplicate functionality - Coming soon!');
+          break;
+        case 'Delete Invoice':
+          if (confirm('Are you sure you want to delete this invoice?')) {
+            alert('Delete functionality - Coming soon!');
+          }
+          break;
+      }
+    }
+  };
+
+  const handleCreateInvoice = () => {
+    alert('Create Invoice functionality - Coming soon!\n\nFor now, you can create invoices from accepted quotes in the Finances page.');
+  };
+
+  const handleCloseInvoiceModal = () => {
+    setIsInvoiceModalOpen(false);
+    setSelectedInvoice(null);
   };
 
   const getStatusIcon = (status: InvoiceStatus) => {
@@ -141,7 +220,7 @@ export default function InvoicesPage() {
               </p>
             </div>
 
-            <Button className="mt-4 md:mt-0">
+            <Button className="mt-4 md:mt-0" onClick={handleCreateInvoice}>
               <Plus className="w-4 h-4 mr-2" />
               Create Invoice
             </Button>
@@ -302,16 +381,36 @@ export default function InvoicesPage() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
-                              <Button size="sm" variant="ghost">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleViewInvoice(invoice)}
+                                title="View Invoice"
+                              >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditInvoice(invoice)}
+                                title="Edit Invoice"
+                              >
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDownloadInvoice(invoice)}
+                                title="Download Invoice"
+                              >
                                 <Download className="w-4 h-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleInvoiceMenu(invoice)}
+                                title="More Actions"
+                              >
                                 <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </div>
@@ -325,6 +424,13 @@ export default function InvoicesPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Invoice Modal */}
+        <InvoiceModal
+          invoice={selectedInvoice}
+          isOpen={isInvoiceModalOpen}
+          onClose={handleCloseInvoiceModal}
+        />
     </MainLayout>
   );
 }

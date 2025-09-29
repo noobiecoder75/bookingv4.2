@@ -7,6 +7,7 @@ import {
   PaymentMethod,
   CommissionAnalytics,
 } from '@/types/financial';
+import { useSettingsStore } from './settings-store';
 
 interface CommissionStore {
   commissions: Commission[];
@@ -22,7 +23,8 @@ interface CommissionStore {
   calculateCommission: (
     agentId: string,
     bookingAmount: number,
-    bookingType?: 'flight' | 'hotel' | 'activity' | 'transfer'
+    bookingType?: 'flight' | 'hotel' | 'activity' | 'transfer',
+    quoteCommissionRate?: number // Override with quote-specific rate
   ) => number;
 
   generateCommissionFromBooking: (
@@ -35,8 +37,19 @@ interface CommissionStore {
       customerName: string;
       bookingAmount: number;
       bookingType?: 'flight' | 'hotel' | 'activity' | 'transfer';
+      quoteCommissionRate?: number; // Quote-specific commission rate
     }
   ) => string;
+
+  // Generate commission from booking confirmation (simplified version)
+  generateCommissionFromBookingConfirmation: (booking: {
+    totalAmount: number;
+    items: Array<{ type?: string }>;
+    customerDetails: { name: string };
+    bookingId: string;
+    createdAt: string;
+    commissionRate?: number;
+  }, invoiceId: string) => string;
 
   // Commission status management
   updateCommissionStatus: (id: string, status: CommissionStatus) => void;
@@ -80,15 +93,7 @@ export const useCommissionStore = create<CommissionStore>()(
   persist(
     (set, get) => ({
       commissions: [],
-      commissionRules: [
-        // Default commission rules
-        {
-          id: 'default-rule',
-          commissionRate: 10,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        }
-      ],
+      commissionRules: [], // Remove hard-coded default rule
 
       createCommission: (commissionData) => {
         const id = crypto.randomUUID();
@@ -128,7 +133,12 @@ export const useCommissionStore = create<CommissionStore>()(
         return get().commissions.find((commission) => commission.id === id);
       },
 
-      calculateCommission: (agentId, bookingAmount, bookingType) => {
+      calculateCommission: (agentId, bookingAmount, bookingType, quoteCommissionRate) => {
+        // If quote has a specific commission rate, use it directly
+        if (quoteCommissionRate !== undefined && quoteCommissionRate !== null) {
+          return (bookingAmount * quoteCommissionRate) / 100;
+        }
+
         const rules = get().getActiveCommissionRules();
 
         // Find the most specific rule that applies
@@ -149,13 +159,13 @@ export const useCommissionStore = create<CommissionStore>()(
           );
         }
 
-        // If no specific rule found, use default
+        // If no specific rule found, use item-type specific default from settings
         if (!applicableRule) {
-          applicableRule = rules.find(rule => !rule.agentId && !rule.bookingType);
-        }
-
-        if (!applicableRule) {
-          return 0; // No applicable rule found
+          const settingsStore = useSettingsStore.getState();
+          const itemRate = bookingType
+            ? settingsStore.getCommissionRateForItemType(bookingType)
+            : settingsStore.settings.defaultCommissionRate;
+          return (bookingAmount * itemRate) / 100;
         }
 
         let commission = (bookingAmount * applicableRule.commissionRate) / 100;
@@ -170,10 +180,12 @@ export const useCommissionStore = create<CommissionStore>()(
         const commissionAmount = get().calculateCommission(
           bookingData.agentId,
           bookingData.bookingAmount,
-          bookingData.bookingType
+          bookingData.bookingType,
+          bookingData.quoteCommissionRate
         );
 
-        const commissionRate = (commissionAmount / bookingData.bookingAmount) * 100;
+        const commissionRate = bookingData.quoteCommissionRate ??
+          (bookingData.bookingAmount > 0 ? (commissionAmount / bookingData.bookingAmount) * 100 : 0);
 
         const commissionData = {
           ...bookingData,
@@ -181,6 +193,41 @@ export const useCommissionStore = create<CommissionStore>()(
           commissionAmount,
           status: 'pending' as CommissionStatus,
           earnedDate: new Date().toISOString(),
+        };
+
+        return get().createCommission(commissionData);
+      },
+
+      generateCommissionFromBookingConfirmation: (booking, invoiceId) => {
+        // Use default agent ID and name for now - in production this would come from the quote/booking
+        const defaultAgentId = 'agent-001';
+        const defaultAgentName = 'Travel Agent';
+
+        // Check if booking has quote-specific commission rate
+        const quoteCommissionRate = booking.commissionRate;
+
+        const commissionAmount = get().calculateCommission(
+          defaultAgentId,
+          booking.totalAmount,
+          booking.items[0]?.type || 'hotel',
+          quoteCommissionRate
+        );
+
+        const commissionRate = quoteCommissionRate ??
+          (booking.totalAmount > 0 ? (commissionAmount / booking.totalAmount) * 100 : 0);
+
+        const commissionData = {
+          agentId: defaultAgentId,
+          agentName: defaultAgentName,
+          bookingId: booking.bookingId,
+          quoteId: booking.bookingId, // Use booking ID as quote reference
+          customerId: booking.bookingId,
+          customerName: booking.customerDetails.name,
+          bookingAmount: booking.totalAmount,
+          commissionRate,
+          commissionAmount,
+          status: 'pending' as CommissionStatus,
+          earnedDate: booking.createdAt,
         };
 
         return get().createCommission(commissionData);

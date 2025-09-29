@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { ModernButton } from '@/components/ui/modern-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
@@ -68,7 +68,7 @@ export function QuickEditPopover({
   const handleSaveField = () => {
     if (!editField) return;
 
-    let updates: Partial<TravelItem> = {};
+    const updates: Partial<TravelItem> = {};
 
     switch (editField) {
       case 'name':
@@ -137,14 +137,14 @@ export function QuickEditPopover({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/10"
         onClick={onCancel}
       />
 
       {/* Popover */}
       <div
         ref={popoverRef}
-        className="fixed bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-6 min-w-[320px] z-50"
+        className="fixed bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 min-w-[320px] z-50"
         style={{
           left: safePosition.left,
           top: safePosition.top,
@@ -162,9 +162,9 @@ export function QuickEditPopover({
             </span>
           )}
         </div>
-        <Button variant="ghost" size="sm" onClick={onCancel} className="hover:bg-gray-100/50 transition-smooth">
+        <ModernButton variant="ghost" size="sm" onClick={onCancel}>
           <X className="w-4 h-4" />
-        </Button>
+        </ModernButton>
       </div>
 
       {isApiItem && (
@@ -191,12 +191,12 @@ export function QuickEditPopover({
                 className="text-sm"
                 placeholder="Item name"
               />
-              <Button size="sm" onClick={handleSaveField}>
+              <ModernButton size="sm" onClick={handleSaveField}>
                 <Check className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+              </ModernButton>
+              <ModernButton size="sm" variant="outline" onClick={handleCancelEdit}>
                 <X className="w-3 h-3" />
-              </Button>
+              </ModernButton>
             </div>
           ) : (
             <div
@@ -241,12 +241,12 @@ export function QuickEditPopover({
                     </>
                   )}
                 </div>
-                <Button size="sm" onClick={handleSaveField}>
+                <ModernButton size="sm" onClick={handleSaveField}>
                   <Check className="w-3 h-3" />
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                </ModernButton>
+                <ModernButton size="sm" variant="outline" onClick={handleCancelEdit}>
                   <X className="w-3 h-3" />
-                </Button>
+                </ModernButton>
               </div>
             ) : (
               <div
@@ -294,12 +294,12 @@ export function QuickEditPopover({
                     </>
                   )}
                 </div>
-                <Button size="sm" onClick={handleSaveField}>
+                <ModernButton size="sm" onClick={handleSaveField}>
                   <Check className="w-3 h-3" />
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                </ModernButton>
+                <ModernButton size="sm" variant="outline" onClick={handleCancelEdit}>
                   <X className="w-3 h-3" />
-                </Button>
+                </ModernButton>
               </div>
             ) : (
               <div
@@ -335,12 +335,12 @@ export function QuickEditPopover({
                 className="text-sm"
                 placeholder="0.00"
               />
-              <Button size="sm" onClick={handleSaveField}>
+              <ModernButton size="sm" onClick={handleSaveField}>
                 <Check className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+              </ModernButton>
+              <ModernButton size="sm" variant="outline" onClick={handleCancelEdit}>
                 <X className="w-3 h-3" />
-              </Button>
+              </ModernButton>
             </div>
           ) : (
             <div
@@ -363,18 +363,18 @@ export function QuickEditPopover({
       {/* Actions */}
       <div className="flex space-x-3 mt-6 pt-4 border-t border-gray-200">
         {!isApiItem && (
-          <Button size="sm" variant="outline" onClick={onFullEdit} className="flex-1 hover-lift transition-smooth">
+          <ModernButton size="sm" variant="outline" onClick={onFullEdit} className="flex-1 hover-lift transition-smooth">
             <Edit3 className="w-4 h-4 mr-2" />
             Full Edit
-          </Button>
+          </ModernButton>
         )}
-        <Button
+        <ModernButton
           size="sm"
           onClick={onCancel}
           className={`${isApiItem ? 'w-full' : 'flex-1'} bg-blue-600 hover:bg-blue-700 hover-lift transition-smooth`}
         >
           {isApiItem ? 'Close' : 'Done'}
-        </Button>
+        </ModernButton>
       </div>
       </div>
     </>

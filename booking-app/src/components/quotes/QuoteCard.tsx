@@ -3,7 +3,8 @@
 import { TravelQuote, Contact } from '@/types';
 import { useContactStore } from '@/store/contact-store';
 import { useQuoteStore } from '@/store/quote-store';
-import { Button } from '@/components/ui/button';
+import { ModernButton } from '@/components/ui/modern-button';
+import { ModernCard } from '@/components/ui/modern-card';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, getContactDisplayName } from '@/lib/utils';
 import { 
@@ -55,11 +56,11 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
   
   const getStatusColor = (status: TravelQuote['status']) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
-      case 'sent': return 'bg-blue-100 text-blue-700 hover:bg-blue-200';
-      case 'accepted': return 'bg-green-100 text-green-700 hover:bg-green-200';
-      case 'rejected': return 'bg-red-100 text-red-700 hover:bg-red-200';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'draft': return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700';
+      case 'sent': return 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/30';
+      case 'accepted': return 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/30';
+      case 'rejected': return 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/30';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
     }
   };
 
@@ -129,7 +130,7 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
   };
 
   return (
-    <div className="glass-card rounded-2xl p-6 hover-lift group transition-smooth border border-white/20 backdrop-blur-sm shadow-soft">
+    <ModernCard variant="elevated" className="p-6 hover-lift group transition-smooth">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1 min-w-0">
@@ -138,13 +139,13 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
               <FileText className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {quote.title}
               </h3>
               {contact && (
-                <div className="flex items-center text-sm text-gray-600 mt-1">
-                  <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center mr-2">
-                    <User className="w-3 h-3 text-gray-600" />
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <div className="w-6 h-6 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mr-2">
+                    <User className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                   </div>
                   <span className="truncate font-medium">
                     {getContactDisplayName(contact.firstName, contact.lastName)}
@@ -162,11 +163,11 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <ModernButton variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                 <MoreHorizontal className="w-4 h-4" />
-              </Button>
+              </ModernButton>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="glass-white backdrop-blur-lg border-white/20">
+            <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
               <DropdownMenuItem asChild>
                 <Link href={`/quote-wizard?edit=${quote.id}`} className="flex items-center">
                   <Edit className="w-4 h-4 mr-2" />
@@ -205,14 +206,14 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
 
       {/* Travel Dates */}
       <div className="flex items-center mb-4">
-        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-          <Calendar className="w-4 h-4 text-blue-600" />
+        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mr-3">
+          <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         </div>
         <div>
-          <div className="text-sm font-semibold text-gray-900">
+          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {moment(quote.travelDates.start).format('MMM D')} - {moment(quote.travelDates.end).format('MMM D, YYYY')}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             {moment(quote.travelDates.end).diff(moment(quote.travelDates.start), 'days')} days
           </div>
         </div>
@@ -222,27 +223,27 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
       {quote.items.length > 0 && (
         <div className="flex items-center gap-2 mb-6 flex-wrap">
           {Object.entries(itemTypeCounts).map(([type, count]) => (
-            <div key={type} className="flex items-center bg-gray-100 rounded-full px-3 py-1 text-xs">
+            <div key={type} className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full px-3 py-1 text-xs">
               <div className="mr-2">
                 {getItemIcon(type)}
               </div>
-              <span className="font-medium text-gray-700">{count} {type}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">{count} {type}</span>
             </div>
           ))}
         </div>
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100/50">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
         <div className="flex items-center">
-          <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
-            <DollarSign className="w-4 h-4 text-emerald-600" />
+          <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg flex items-center justify-center mr-3">
+            <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {formatCurrency(quote.totalCost)}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               Total Cost
             </div>
           </div>
@@ -250,10 +251,10 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
         
         <div className="flex items-center space-x-2">
           <Select value={quote.status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-auto h-9 text-sm rounded-lg border-gray-200 hover:border-gray-300">
+            <SelectTrigger className="w-auto h-9 text-sm rounded-lg border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="glass-white backdrop-blur-lg border-white/20">
+            <SelectContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="sent">Sent</SelectItem>
               <SelectItem value="accepted">Accepted</SelectItem>
@@ -263,14 +264,14 @@ export function QuoteCard({ quote, onDelete, onDuplicate, onStatusChange }: Quot
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100/30">
-        <div className="text-xs text-gray-500">
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           Created {moment(quote.createdAt).format('MMM D, YYYY')}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           {quote.items.length} item{quote.items.length !== 1 ? 's' : ''}
         </div>
       </div>
-    </div>
+    </ModernCard>
   );
 }

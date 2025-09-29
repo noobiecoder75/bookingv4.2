@@ -19,7 +19,8 @@ import {
   CreditCard,
   DollarSign,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -75,6 +76,12 @@ export function Sidebar() {
       label: 'Expenses',
       icon: CreditCard,
       active: pathname?.startsWith('/expenses')
+    },
+    {
+      href: '/admin/settings',
+      label: 'Settings',
+      icon: Settings,
+      active: pathname?.startsWith('/admin/settings')
     },
   ];
 

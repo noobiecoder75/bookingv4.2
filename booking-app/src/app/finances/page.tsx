@@ -11,6 +11,8 @@ import { useCommissionStore } from '@/store/commission-store';
 import { useExpenseStore } from '@/store/expense-store';
 import { useAuthStore } from '@/store/auth-store';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { useQuoteStore } from '@/store/quote-store';
+import { formatItemDetails } from '@/lib/travel-item-formatter';
 import {
   TrendingUp,
   TrendingDown,
@@ -26,9 +28,10 @@ import {
 
 export default function FinancesPage() {
   const { user } = useAuthStore();
-  const { invoices, getTotalRevenue, getTotalOutstanding, getOverdueAmount, getFinancialSummary } = useInvoiceStore();
-  const { getTotalCommissionsEarned, getTotalCommissionsPaid, getTotalCommissionsPending } = useCommissionStore();
+  const { invoices, getTotalRevenue, getTotalOutstanding, getOverdueAmount, getFinancialSummary, getInvoicesByStatus, markInvoiceAsPaid } = useInvoiceStore();
+  const { getTotalCommissionsEarned, getTotalCommissionsPaid, getTotalCommissionsPending, bulkMarkAsPaid, getUnpaidCommissions } = useCommissionStore();
   const { getTotalExpenses, getExpensesByCategory } = useExpenseStore();
+  const { getQuotesByStatus, generateInvoiceFromAcceptedQuote } = useQuoteStore();
 
   const [dateRange, setDateRange] = useState('30'); // days
   const [selectedPeriod, setSelectedPeriod] = useState({
@@ -59,11 +62,148 @@ export default function FinancesPage() {
 
   const financialSummary = getFinancialSummary(selectedPeriod.startDate, selectedPeriod.endDate);
 
+  // Get real data for quick actions
+  const acceptedQuotes = getQuotesByStatus('accepted');
+  const unpaidCommissions = getUnpaidCommissions();
+  const unpaidInvoices = getInvoicesByStatus('sent').concat(getInvoicesByStatus('partial'));
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  // Quick action handlers
+  const handleCreateInvoice = async () => {
+    if (acceptedQuotes.length === 0) {
+      alert('No accepted quotes available to generate invoices from.');
+      return;
+    }
+
+    // Generate invoices for all accepted quotes
+    let invoicesCreated = 0;
+
+    for (const quote of acceptedQuotes) {
+      try {
+        // Import stores to avoid circular dependencies
+        const { useInvoiceStore } = await import('@/store/invoice-store');
+        const { useCommissionStore } = await import('@/store/commission-store');
+        const { useContactStore } = await import('@/store/contact-store');
+
+        const invoiceStore = useInvoiceStore.getState();
+        const commissionStore = useCommissionStore.getState();
+        const contactStore = useContactStore.getState();
+
+        // Get customer data
+        const customer = contactStore.getContactById(quote.contactId);
+        const customerData = {
+          customerId: quote.contactId,
+          customerName: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown Customer',
+          customerEmail: customer?.email || 'unknown@example.com',
+          customerAddress: customer?.address
+        };
+
+        // Create invoice with actual quote data
+        const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+        const invoiceItems = quote.items.map((item: any) => {
+          const formattedDetails = formatItemDetails(item);
+          const description = formattedDetails
+            ? `${item.name} - ${formattedDetails}`
+            : item.name;
+
+          return {
+            id: crypto.randomUUID(),
+            description,
+            quantity: item.quantity || 1,
+            unitPrice: item.price,
+            total: item.price * (item.quantity || 1),
+            taxRate: 0,
+            taxAmount: 0,
+          };
+        });
+
+        const subtotal = invoiceItems.reduce((sum, item) => sum + item.total, 0);
+        const taxRate = 8.5;
+        const taxAmount = subtotal * (taxRate / 100);
+        const total = subtotal + taxAmount;
+
+        const invoiceData = {
+          quoteId: quote.id,
+          customerId: customerData.customerId,
+          customerName: customerData.customerName,
+          customerEmail: customerData.customerEmail,
+          customerAddress: customerData.customerAddress,
+          issueDate: new Date().toISOString().split('T')[0],
+          dueDate: dueDate.toISOString().split('T')[0],
+          status: 'sent' as const,
+          items: invoiceItems,
+          subtotal,
+          taxRate,
+          taxAmount,
+          total,
+          payments: [],
+          terms: 'Net 30',
+        };
+
+        const invoiceId = invoiceStore.createInvoice(invoiceData);
+
+        if (invoiceId) {
+          // Generate commission record
+          commissionStore.generateCommissionFromBooking({
+            agentId: 'agent-001',
+            agentName: 'Travel Agent',
+            bookingId: invoiceId,
+            quoteId: quote.id,
+            customerId: quote.contactId,
+            customerName: customerData.customerName,
+            bookingAmount: total,
+            bookingType: 'hotel'
+          });
+
+          invoicesCreated++;
+        }
+      } catch (error) {
+        console.error('Failed to create invoice for quote:', quote.id, error);
+      }
+    }
+
+    if (invoicesCreated > 0) {
+      alert(`Successfully created ${invoicesCreated} invoice(s) from accepted quotes!`);
+      window.location.reload(); // Refresh to show new data
+    } else {
+      alert('Failed to create invoices. Please try again.');
+    }
+  };
+
+  const handlePayCommissions = () => {
+    if (unpaidCommissions.length === 0) {
+      alert('No pending commissions to pay.');
+      return;
+    }
+
+    // Mark all unpaid commissions as paid
+    const commissionIds = unpaidCommissions.map(c => c.id);
+    bulkMarkAsPaid(commissionIds, 'bank_transfer');
+
+    alert(`Successfully paid ${commissionIds.length} commission(s)!`);
+    window.location.reload(); // Refresh to show updated data
+  };
+
+  const handleMarkInvoicesAsPaid = () => {
+    if (unpaidInvoices.length === 0) {
+      alert('No unpaid invoices to mark as paid.');
+      return;
+    }
+
+    // Mark all unpaid invoices as paid
+    unpaidInvoices.forEach(invoice => {
+      markInvoiceAsPaid(invoice.id, 'bank_transfer', `TXN-${Date.now()}`);
+    });
+
+    alert(`Successfully marked ${unpaidInvoices.length} invoice(s) as paid!`);
+    window.location.reload(); // Refresh to show updated revenue
   };
 
   if (!user) {
@@ -243,17 +383,32 @@ export default function FinancesPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button
+                    className="w-full justify-start"
+                    variant="outline"
+                    onClick={handleCreateInvoice}
+                    disabled={acceptedQuotes.length === 0}
+                  >
                     <Receipt className="w-4 h-4 mr-2" />
-                    Create Invoice
+                    Create Invoice ({acceptedQuotes.length})
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Record Expense
+                  <Button
+                    className="w-full justify-start"
+                    variant="outline"
+                    onClick={handleMarkInvoicesAsPaid}
+                    disabled={unpaidInvoices.length === 0}
+                  >
+                    <Receipt className="w-4 h-4 mr-2" />
+                    Mark Invoices Paid ({unpaidInvoices.length})
                   </Button>
-                  <Button className="w-full justify-start" variant="outline">
+                  <Button
+                    className="w-full justify-start"
+                    variant="outline"
+                    onClick={handlePayCommissions}
+                    disabled={unpaidCommissions.length === 0}
+                  >
                     <DollarSign className="w-4 h-4 mr-2" />
-                    Pay Commissions
+                    Pay Commissions ({unpaidCommissions.length})
                   </Button>
                 </div>
               </CardContent>

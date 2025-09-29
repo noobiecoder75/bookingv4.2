@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { ModernButton } from '@/components/ui/modern-button';
+import { ModernCard } from '@/components/ui/modern-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Mail, Lock, Sparkles } from 'lucide-react';
@@ -62,19 +63,19 @@ export default function LoginPage() {
         </Link>
 
         {/* Login Card */}
-        <div className="glass-white rounded-2xl p-8 shadow-strong">
+        <ModernCard className="p-8 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-white/20 dark:border-gray-700/50">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-white/80">Sign in to your BookingGPT account</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome Back</h1>
+            <p className="text-gray-600 dark:text-gray-400">Sign in to your BookingGPT account</p>
           </div>
 
           {/* Demo Notice */}
-          <div className="bg-blue-500/20 border border-blue-400/30 rounded-xl p-4 mb-6">
-            <p className="text-white/90 text-sm text-center">
+          <div className="bg-blue-500/20 dark:bg-blue-500/10 border border-blue-400/30 dark:border-blue-400/20 rounded-xl p-4 mb-6">
+            <p className="text-blue-900 dark:text-blue-100 text-sm text-center">
               <strong>Demo Mode:</strong> This is a demonstration login. Click &quot;Sign In&quot; to access the app.
             </p>
           </div>
@@ -82,16 +83,16 @@ export default function LoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white/90 font-medium">
+              <Label htmlFor="email" className="text-gray-700 dark:text-gray-300 font-medium">
                 Email Address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="Enter your email"
-                  className="pl-12 bg-white/20 border-white/30 text-white placeholder:text-white/60"
+                  className="pl-12 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -99,16 +100,16 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white/90 font-medium">
+              <Label htmlFor="password" className="text-gray-700 dark:text-gray-300 font-medium">
                 Password
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="Enter your password"
-                  className="pl-12 bg-white/20 border-white/30 text-white placeholder:text-white/60"
+                  className="pl-12 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -116,39 +117,39 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-white/80">
-                <input type="checkbox" className="rounded border-white/30" />
+              <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600" />
                 Remember me
               </label>
-              <Link href="#" className="text-white/80 hover:text-white">
+              <Link href="#" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                 Forgot password?
               </Link>
             </div>
 
-            <Button
+            <ModernButton
               type="submit"
               size="lg"
-              className="w-full btn-glass hover-lift"
+              className="w-full"
               disabled={isLoading}
             >
               {isLoading ? 'Signing in...' : 'Sign In to Dashboard'}
-            </Button>
+            </ModernButton>
           </form>
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-white/60 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               New to BookingGPT?{' '}
-              <Link href="/signup" className="text-white hover:underline">
+              <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
                 Create an account
               </Link>
             </p>
           </div>
-        </div>
+        </ModernCard>
 
         {/* Trust Indicators */}
         <div className="mt-6 text-center">
-          <p className="text-white/60 text-xs">
+          <p className="text-white/60 dark:text-gray-400 text-xs">
             Trusted by 500+ travel professionals worldwide
           </p>
         </div>

@@ -36,6 +36,7 @@ export interface TravelQuote {
   totalCost: number;
   status: 'draft' | 'sent' | 'accepted' | 'rejected';
   travelDates: { start: Date; end: Date };
+  commissionRate?: number; // percentage (0-50), defaults to global setting
   createdAt: Date;
 }
 
