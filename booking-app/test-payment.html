@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Payment API</title>
+</head>
+<body>
+    <h1>Stripe Payment API Test</h1>
+    <button onclick="testPayment()">Test Create Payment Intent</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testPayment() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...';
+
+            const testQuote = {
+                id: 'test-quote-123',
+                title: 'Test Trip',
+                totalCost: 100.00,
+                contactId: 'test-contact',
+                items: [
+                    {
+                        id: 'item-1',
+                        type: 'hotel',
+                        description: 'Test Hotel',
+                        price: 100.00,
+                        source: 'offline_agent'
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/payments/create-payment-intent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        quoteId: testQuote.id,
+                        paymentType: 'full',
+                        customerEmail: 'test@example.com',
+                        customerId: 'test-123',
+                        quote: testQuote
+                    })
+                });
+
+                const data = await response.json();
+
+                output.textContent = JSON.stringify({
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, null, 2);
+
+                console.log('Response:', data);
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

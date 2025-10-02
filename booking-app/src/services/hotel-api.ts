@@ -107,12 +107,45 @@ const mockHotels: EnhancedHotelDetails[] = [
 ];
 
 export class HotelService {
+  private searchCache: Record<string, { data: APISearchResponse<EnhancedHotelDetails>; timestamp: number }> = {};
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   constructor() {
     // HotelBeds API calls are now handled by backend API routes
     console.log('HotelService initialized - using backend API proxy');
   }
 
+  private getCacheKey(request: APISearchRequest): string {
+    return `${request.destination}-${request.checkIn}-${request.checkOut}-${request.adults || 2}-${request.children || 0}-${request.rooms || 1}`;
+  }
+
+  private getCachedSearch(cacheKey: string): APISearchResponse<EnhancedHotelDetails> | null {
+    const cached = this.searchCache[cacheKey];
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log('✅ Returning cached hotel search results');
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedSearch(cacheKey: string, data: APISearchResponse<EnhancedHotelDetails>): void {
+    this.searchCache[cacheKey] = { data, timestamp: Date.now() };
+    // Clean up old cache entries
+    const now = Date.now();
+    Object.keys(this.searchCache).forEach(key => {
+      if (now - this.searchCache[key].timestamp > this.CACHE_DURATION) {
+        delete this.searchCache[key];
+      }
+    });
+  }
+
   private convertSimplifiedToEnhanced(hotel: SimplifiedHotel, nights: number): EnhancedHotelDetails {
+    // Calculate breakdown ensuring total equals sum of parts (no rounding discrepancies)
+    const totalPrice = hotel.price;
+    const taxes = Math.round(totalPrice * 0.12);
+    const fees = Math.round(totalPrice * 0.03);
+    const roomRate = totalPrice - taxes - fees; // Balance automatically
+
     return {
       hotelName: hotel.name,
       hotelChain: 'Unknown',
@@ -146,17 +179,24 @@ export class HotelService {
       mealPlan: 'room-only',
       amenities: hotel.amenities || ['Free WiFi', 'Air Conditioning'],
       cancellationPolicy: 'Please check with hotel for cancellation policy',
-      totalPrice: hotel.price,
+      totalPrice,
       priceBreakdown: {
-        roomRate: Math.round(hotel.price * 0.85),
-        taxes: Math.round(hotel.price * 0.12),
-        fees: Math.round(hotel.price * 0.03)
+        roomRate,
+        taxes,
+        fees
       }
     };
   }
 
   async searchHotels(request: APISearchRequest): Promise<APISearchResponse<EnhancedHotelDetails>> {
     console.log('Hotel search request:', request);
+
+    // Check cache first
+    const cacheKey = this.getCacheKey(request);
+    const cached = this.getCachedSearch(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     try {
       // Call our internal API route
@@ -232,7 +272,7 @@ export class HotelService {
           );
         }
 
-        return {
+        const response: APISearchResponse<EnhancedHotelDetails> = {
           success: true,
           data: enhancedHotels,
           metadata: {
@@ -242,6 +282,11 @@ export class HotelService {
             source: apiResponse.source,
           },
         };
+
+        // Cache the successful response
+        this.setCachedSearch(cacheKey, response);
+
+        return response;
       } else {
         throw new Error(apiResponse.error || 'Invalid API response');
       }
@@ -325,7 +370,13 @@ export class HotelService {
   calculateNights(checkIn: string, checkOut: string): number {
     const start = new Date(checkIn);
     const end = new Date(checkOut);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
+
+    // Validate date order
+    if (end.getTime() <= start.getTime()) {
+      throw new Error('Check-out date must be after check-in date');
+    }
+
+    const diffTime = end.getTime() - start.getTime(); // No need for Math.abs now
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 

@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import moment from 'moment';
 import { ClientMessageModal } from './ClientMessageModal';
-import { ClientPaymentModal } from './ClientPaymentModal';
+import { PaymentModal } from '@/components/payment/PaymentModal';
 import { downloadICSFile, generateGoogleCalendarLink } from '@/lib/calendar-export';
 
 interface ClientQuoteViewProps {
@@ -151,10 +151,12 @@ export function ClientQuoteView({
     console.log('Message sent:', { message, requestChanges, quoteId: quote.id });
   };
 
-  const handlePayment = (paymentData: Record<string, unknown>) => {
+  const handlePaymentSuccess = () => {
+    console.log('✅ Payment successful for quote:', quote.id);
     onQuoteAction?.('payment');
-    // Here you would typically process the payment
-    console.log('Payment initiated:', { paymentData, quoteId: quote.id });
+    setShowPaymentModal(false);
+    setQuoteStatus('accepted');
+    // You could show a success message or redirect here
   };
 
   const handleDownloadCalendar = () => {
@@ -488,13 +490,12 @@ export function ClientQuoteView({
         agentName={agentName}
       />
 
-      {/* Payment Modal */}
-      <ClientPaymentModal
+      {/* Payment Modal - Real Stripe Integration */}
+      <PaymentModal
+        quote={quote}
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        onPayment={handlePayment}
-        quote={quote}
-        contact={contact}
+        onSuccess={handlePaymentSuccess}
       />
     </div>
   );

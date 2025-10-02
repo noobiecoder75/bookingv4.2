@@ -206,12 +206,33 @@ export const useCommissionStore = create<CommissionStore>()(
         // Check if booking has quote-specific commission rate
         const quoteCommissionRate = booking.commissionRate;
 
-        const commissionAmount = get().calculateCommission(
-          defaultAgentId,
-          booking.totalAmount,
-          booking.items[0]?.type || 'hotel',
-          quoteCommissionRate
-        );
+        // Calculate commission for multi-type bookings by averaging item types
+        // In a real system, you'd calculate per-item and sum
+        let avgCommissionAmount = 0;
+
+        if (booking.items.length > 0) {
+          // Calculate commission for each item and average
+          const itemCommissions = booking.items.map((item: any) => {
+            const itemAmount = item.details?.totalPrice || (booking.totalAmount / booking.items.length);
+            return get().calculateCommission(
+              defaultAgentId,
+              itemAmount,
+              item.type || 'hotel',
+              quoteCommissionRate
+            );
+          });
+          avgCommissionAmount = itemCommissions.reduce((sum: number, val: number) => sum + val, 0);
+        } else {
+          // Fallback to single calculation if no items
+          avgCommissionAmount = get().calculateCommission(
+            defaultAgentId,
+            booking.totalAmount,
+            'hotel',
+            quoteCommissionRate
+          );
+        }
+
+        const commissionAmount = avgCommissionAmount;
 
         const commissionRate = quoteCommissionRate ??
           (booking.totalAmount > 0 ? (commissionAmount / booking.totalAmount) * 100 : 0);

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TravelQuote, TravelItem, CalendarEvent } from '@/types';
 import { generateClientQuoteLink, generatePreviewLink } from '@/lib/client-links';
+import { debounce } from '@/lib/utils';
 
 interface QuoteStats {
   totalQuotes: number;
@@ -16,6 +17,13 @@ interface QuoteStats {
 interface QuoteStore {
   quotes: TravelQuote[];
   currentQuote: TravelQuote | null;
+  // Memoization cache for calendar events
+  calendarEventsCache: {
+    data: CalendarEvent[];
+    quotesHash: string;
+    contactId?: string;
+    statusFilters?: TravelQuote['status'][];
+  } | null;
   addQuote: (quote: Omit<TravelQuote, 'id' | 'createdAt'>) => string;
   updateQuote: (id: string, updates: Partial<TravelQuote>) => void;
   deleteQuote: (id: string) => void;
@@ -26,7 +34,7 @@ interface QuoteStore {
   updateItemInQuote: (quoteId: string, itemId: string, updates: Partial<TravelItem>) => void;
   removeItemFromQuote: (quoteId: string, itemId: string) => void;
   calculateQuoteTotal: (quoteId: string) => number;
-  getCalendarEvents: (contactId?: string) => CalendarEvent[];
+  getCalendarEvents: (contactId?: string, statusFilters?: TravelQuote['status'][]) => CalendarEvent[];
   // Dashboard methods
   getQuotesByStatus: (status: TravelQuote['status']) => TravelQuote[];
   getQuotesByDateRange: (startDate: Date, endDate: Date) => TravelQuote[];
@@ -43,11 +51,26 @@ interface QuoteStore {
   generateInvoiceFromAcceptedQuote: (quoteId: string) => string | null;
 }
 
+// Create debounced calculation function outside the store
+const debouncedCalculateTotal = debounce((quoteId: string, getState: () => QuoteStore, updateQuote: (id: string, updates: Partial<TravelQuote>) => void) => {
+  const quote = getState().quotes.find((q) => q.id === quoteId);
+  if (!quote) return 0;
+
+  const total = quote.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  updateQuote(quoteId, { totalCost: total });
+  return total;
+}, 300);
+
 export const useQuoteStore = create<QuoteStore>()(
   persist(
     (set, get) => ({
       quotes: [],
       currentQuote: null,
+      calendarEventsCache: null,
       
       addQuote: (quoteData) => {
         const newQuote: TravelQuote = {
@@ -57,6 +80,7 @@ export const useQuoteStore = create<QuoteStore>()(
         };
         set((state) => ({
           quotes: [...state.quotes, newQuote],
+          calendarEventsCache: null, // Invalidate cache
         }));
         return newQuote.id;
       },
@@ -66,9 +90,10 @@ export const useQuoteStore = create<QuoteStore>()(
           quotes: state.quotes.map((quote) =>
             quote.id === id ? { ...quote, ...updates } : quote
           ),
-          currentQuote: state.currentQuote?.id === id 
-            ? { ...state.currentQuote, ...updates } 
+          currentQuote: state.currentQuote?.id === id
+            ? { ...state.currentQuote, ...updates }
             : state.currentQuote,
+          calendarEventsCache: null, // Invalidate cache
         }));
       },
       
@@ -76,6 +101,7 @@ export const useQuoteStore = create<QuoteStore>()(
         set((state) => ({
           quotes: state.quotes.filter((quote) => quote.id !== id),
           currentQuote: state.currentQuote?.id === id ? null : state.currentQuote,
+          calendarEventsCache: null, // Invalidate cache
         }));
       },
       
@@ -96,17 +122,18 @@ export const useQuoteStore = create<QuoteStore>()(
           ...itemData,
           id: crypto.randomUUID(),
         };
-        
+
         set((state) => ({
           quotes: state.quotes.map((quote) =>
             quote.id === quoteId
               ? { ...quote, items: [...quote.items, newItem] }
               : quote
           ),
+          calendarEventsCache: null, // Invalidate cache
         }));
-        
-        // Recalculate total
-        get().calculateQuoteTotal(quoteId);
+
+        // Debounced recalculate total
+        debouncedCalculateTotal(quoteId, get, get().updateQuote);
       },
       
       updateItemInQuote: (quoteId, itemId, updates) => {
@@ -121,10 +148,11 @@ export const useQuoteStore = create<QuoteStore>()(
                 }
               : quote
           ),
+          calendarEventsCache: null, // Invalidate cache
         }));
-        
-        // Recalculate total
-        get().calculateQuoteTotal(quoteId);
+
+        // Debounced recalculate total
+        debouncedCalculateTotal(quoteId, get, get().updateQuote);
       },
       
       removeItemFromQuote: (quoteId, itemId) => {
@@ -137,10 +165,11 @@ export const useQuoteStore = create<QuoteStore>()(
                 }
               : quote
           ),
+          calendarEventsCache: null, // Invalidate cache
         }));
-        
-        // Recalculate total
-        get().calculateQuoteTotal(quoteId);
+
+        // Debounced recalculate total
+        debouncedCalculateTotal(quoteId, get, get().updateQuote);
       },
       
       calculateQuoteTotal: (quoteId) => {
@@ -156,13 +185,42 @@ export const useQuoteStore = create<QuoteStore>()(
         return total;
       },
       
-      getCalendarEvents: (contactId) => {
-        const { quotes } = get();
-        const filteredQuotes = contactId 
-          ? quotes.filter(quote => quote.contactId === contactId)
-          : quotes;
-        
-        return filteredQuotes.flatMap(quote =>
+      getCalendarEvents: (contactId, statusFilters) => {
+        const { quotes, calendarEventsCache } = get();
+
+        // Default to all statuses if not specified
+        const activeStatusFilters = statusFilters && statusFilters.length > 0
+          ? statusFilters
+          : ['draft', 'sent', 'accepted', 'rejected'] as TravelQuote['status'][];
+
+        // Create a hash of current quotes to detect changes
+        const quotesHash = JSON.stringify(quotes.map(q => ({ id: q.id, items: q.items.length, updated: q.createdAt })));
+
+        // Check if cache is valid
+        if (
+          calendarEventsCache &&
+          calendarEventsCache.quotesHash === quotesHash &&
+          calendarEventsCache.contactId === contactId &&
+          JSON.stringify(calendarEventsCache.statusFilters) === JSON.stringify(activeStatusFilters)
+        ) {
+          console.log('✅ Returning memoized calendar events');
+          return calendarEventsCache.data;
+        }
+
+        // Recalculate events with filters
+        let filteredQuotes = quotes;
+
+        // Filter by contact
+        if (contactId) {
+          filteredQuotes = filteredQuotes.filter(quote => quote.contactId === contactId);
+        }
+
+        // Filter by status
+        filteredQuotes = filteredQuotes.filter(quote =>
+          activeStatusFilters.includes(quote.status)
+        );
+
+        const events = filteredQuotes.flatMap(quote =>
           quote.items.map(item => ({
             id: item.id,
             title: item.name,
@@ -176,6 +234,20 @@ export const useQuoteStore = create<QuoteStore>()(
             },
           }))
         );
+
+        // Update cache asynchronously to avoid setState during render
+        queueMicrotask(() => {
+          set({
+            calendarEventsCache: {
+              data: events,
+              quotesHash,
+              contactId,
+              statusFilters: activeStatusFilters,
+            },
+          });
+        });
+
+        return events;
       },
 
       // Dashboard methods
@@ -289,17 +361,20 @@ export const useQuoteStore = create<QuoteStore>()(
 
       generateInvoiceFromAcceptedQuote: (quoteId) => {
         const quote = get().getQuoteById(quoteId);
-        if (!quote) return null;
+        if (!quote) {
+          console.error('Cannot generate invoice: Quote not found');
+          return null;
+        }
 
         if (quote.status !== 'accepted') {
-          console.warn('Cannot generate invoice for non-accepted quote');
+          console.error('Cannot generate invoice: Quote status is not "accepted" (current status:', quote.status + ')');
           return null;
         }
 
         try {
           // For now, just return a placeholder ID to avoid circular dependencies
           // The finances page will handle this differently
-          console.log('Invoice generation requested for quote:', quoteId);
+          console.log('✅ Invoice generation requested for accepted quote:', quoteId);
           return crypto.randomUUID();
         } catch (error) {
           console.error('Failed to generate invoice from quote:', error);

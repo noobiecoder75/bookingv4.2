@@ -1,37 +1,64 @@
 'use client';
 
-import { Calendar, momentLocalizer, View } from 'react-big-calendar';
+import { Calendar as BigCalendar, momentLocalizer, View } from 'react-big-calendar';
 import moment from 'moment';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuoteStore } from '@/store/quote-store';
-import { CalendarEvent } from '@/types';
+import { CalendarEvent, TravelQuote } from '@/types';
 import { getTravelItemColor } from '@/lib/utils';
 import { downloadICSFile } from '@/lib/calendar-export';
 import { Button } from '@/components/ui/button';
-import { Download, CalendarPlus } from 'lucide-react';
+import { Download, CalendarPlus, Filter } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 const localizer = momentLocalizer(moment);
 
 interface TimelineCalendarProps {
-  contactId?: string;
+  contactId?: string | null;
+  statusFilters?: TravelQuote['status'][];
   height?: number;
+  onEventCountChange?: (count: number) => void;
 }
 
-export function TimelineCalendar({ contactId, height = 600 }: TimelineCalendarProps) {
+export function TimelineCalendar({
+  contactId,
+  statusFilters,
+  height = 600,
+  onEventCountChange
+}: TimelineCalendarProps) {
   const [view, setView] = useState<View>('week');
   const [date, setDate] = useState(new Date());
   const { getCalendarEvents, quotes } = useQuoteStore();
 
   const events = useMemo(() => {
-    return getCalendarEvents(contactId);
-  }, [getCalendarEvents, contactId]);
+    const rawEvents = getCalendarEvents(contactId || undefined, statusFilters);
+
+    // Ensure dates are proper Date objects (fix for persisted storage serialization)
+    return rawEvents.map(event => ({
+      ...event,
+      start: event.start instanceof Date ? event.start : new Date(event.start),
+      end: event.end instanceof Date ? event.end : new Date(event.end),
+    }));
+  }, [getCalendarEvents, contactId, statusFilters]);
+
+  // Notify parent of event count changes
+  useEffect(() => {
+    if (onEventCountChange) {
+      onEventCountChange(events.length);
+    }
+  }, [events.length, onEventCountChange]);
 
   const handleExportAll = () => {
     // Create a consolidated quote with all travel items for export
-    const filteredQuotes = contactId 
-      ? quotes.filter(quote => quote.contactId === contactId)
-      : quotes;
+    let filteredQuotes = quotes;
+
+    if (contactId) {
+      filteredQuotes = filteredQuotes.filter(quote => quote.contactId === contactId);
+    }
+
+    if (statusFilters && statusFilters.length > 0) {
+      filteredQuotes = filteredQuotes.filter(quote => statusFilters.includes(quote.status));
+    }
     
     if (filteredQuotes.length === 0) return;
     
@@ -74,8 +101,9 @@ export function TimelineCalendar({ contactId, height = 600 }: TimelineCalendarPr
   };
 
   const CustomEvent = ({ event }: { event: CalendarEvent }) => {
-    const isApiItem = event.resource?.source === 'api';
-    const apiProvider = event.resource?.apiProvider;
+    const details = event.resource?.details as Record<string, unknown> | undefined;
+    const isApiItem = details?.source === 'api';
+    const apiProvider = details?.apiProvider;
 
     return (
       <div className="flex items-center space-x-2">
@@ -201,27 +229,37 @@ export function TimelineCalendar({ contactId, height = 600 }: TimelineCalendarPr
 
   return (
     <div className="p-4">
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height }}
-        view={view}
-        date={date}
-        onView={(view) => setView(view)}
-        onNavigate={(date) => setDate(date)}
-        eventPropGetter={eventStyleGetter}
-        components={{
-          event: CustomEvent,
-          toolbar: CustomToolbar,
-        }}
-        views={['month', 'week', 'day', 'agenda']}
-        step={60}
-        showMultiDayTimes
-        defaultView="week"
-        className="bg-white rounded-lg shadow-sm"
-      />
+      {events.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Filter className="w-16 h-16 text-gray-300 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No items match your filters</h3>
+          <p className="text-gray-600 mb-4">
+            Try adjusting your filters to see more travel items
+          </p>
+        </div>
+      ) : (
+        <BigCalendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height }}
+          view={view}
+          date={date}
+          onView={(view) => setView(view)}
+          onNavigate={(date) => setDate(date)}
+          eventPropGetter={eventStyleGetter}
+          components={{
+            event: CustomEvent,
+            toolbar: CustomToolbar,
+          }}
+          views={['month', 'week', 'day', 'agenda']}
+          step={60}
+          showMultiDayTimes
+          defaultView="week"
+          className="bg-white rounded-lg shadow-sm"
+        />
+      )}
     </div>
   );
 }

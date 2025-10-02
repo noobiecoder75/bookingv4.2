@@ -21,7 +21,7 @@ interface SearchHistory {
 interface BookingStore {
   // Search & Results
   searchHistory: SearchHistory[];
-  cachedSearchResults: Map<string, APISearchResponse<unknown>>;
+  cachedSearchResults: Record<string, APISearchResponse<unknown>>;
   currentSearchId: string | null;
   
   // Bookings
@@ -54,7 +54,7 @@ export const useBookingStore = create<BookingStore>()(
     (set, get) => ({
       // Initial State
       searchHistory: [],
-      cachedSearchResults: new Map(),
+      cachedSearchResults: {},
       currentSearchId: null,
       bookingConfirmations: [],
       pendingBookings: [],
@@ -62,16 +62,16 @@ export const useBookingStore = create<BookingStore>()(
       // Search Actions
       searchFlights: async (request) => {
         const response = await flightService.searchFlights(request);
-        
+
         if (response.success && response.metadata) {
           const { searchId } = response.metadata;
-          
+
           // Cache results
           set((state) => ({
-            cachedSearchResults: new Map(state.cachedSearchResults).set(searchId, response),
+            cachedSearchResults: { ...state.cachedSearchResults, [searchId]: response },
             currentSearchId: searchId,
           }));
-          
+
           // Add to history
           get().addToSearchHistory({
             type: 'flight',
@@ -79,22 +79,22 @@ export const useBookingStore = create<BookingStore>()(
             results: response.data?.length || 0,
           });
         }
-        
+
         return response;
       },
       
       searchHotels: async (request) => {
         const response = await hotelService.searchHotels(request);
-        
+
         if (response.success && response.metadata) {
           const { searchId } = response.metadata;
-          
+
           // Cache results
           set((state) => ({
-            cachedSearchResults: new Map(state.cachedSearchResults).set(searchId, response),
+            cachedSearchResults: { ...state.cachedSearchResults, [searchId]: response },
             currentSearchId: searchId,
           }));
-          
+
           // Add to history
           get().addToSearchHistory({
             type: 'hotel',
@@ -102,7 +102,7 @@ export const useBookingStore = create<BookingStore>()(
             results: response.data?.length || 0,
           });
         }
-        
+
         return response;
       },
       
@@ -119,35 +119,40 @@ export const useBookingStore = create<BookingStore>()(
       },
       
       getCachedResults: (searchId) => {
-        return get().cachedSearchResults.get(searchId);
+        return get().cachedSearchResults[searchId];
       },
       
       // Booking Actions
       createBooking: async (items) => {
         const bookingId = crypto.randomUUID();
-        
+
         const pendingBooking = {
           id: bookingId,
           items,
           status: 'pending' as const,
         };
-        
+
         set((state) => ({
           pendingBookings: [...state.pendingBookings, pendingBooking],
         }));
-        
+
         // In production, this would call actual booking APIs
-        // For now, simulate processing
-        setTimeout(() => {
-          set((state) => ({
-            pendingBookings: state.pendingBookings.map((booking) =>
-              booking.id === bookingId
-                ? { ...booking, status: 'processing' as const }
-                : booking
-            ),
-          }));
+        // For now, simulate processing with cleanup capability
+        const timeoutId = setTimeout(() => {
+          // Check if booking still exists before updating
+          const currentBookings = get().pendingBookings;
+          if (currentBookings.find(b => b.id === bookingId)) {
+            set((state) => ({
+              pendingBookings: state.pendingBookings.map((booking) =>
+                booking.id === bookingId
+                  ? { ...booking, status: 'processing' as const }
+                  : booking
+              ),
+            }));
+          }
         }, 1000);
-        
+
+        // Store timeout ID for potential cleanup (could be enhanced with a timeouts map)
         return bookingId;
       },
       
@@ -161,12 +166,12 @@ export const useBookingStore = create<BookingStore>()(
 
         const confirmation: BookingConfirmation = {
           bookingId,
-          bookingReference: `REF${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+          bookingReference: `REF-${crypto.randomUUID().substring(0, 8).toUpperCase()}`,
           status: 'confirmed',
           createdAt: new Date().toISOString(),
           items: pendingBooking.items.map((item) => ({
             type: 'flightType' in item ? 'flight' : 'hotel',
-            confirmationNumber: `CNF${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+            confirmationNumber: `CNF-${crypto.randomUUID().substring(0, 8).toUpperCase()}`,
             details: item,
           })),
           totalAmount: pendingBooking.items.reduce((sum, item) => {
@@ -188,7 +193,10 @@ export const useBookingStore = create<BookingStore>()(
           pendingBookings: state.pendingBookings.filter((b) => b.id !== bookingId),
         }));
 
-        // Auto-generate invoice from booking confirmation
+        // Auto-generate invoice from booking confirmation with transaction-like behavior
+        let invoiceId: string | null = null;
+        let commissionId: string | null = null;
+
         try {
           const { useInvoiceStore } = await import('./invoice-store');
           const { useCommissionStore } = await import('./commission-store');
@@ -197,14 +205,40 @@ export const useBookingStore = create<BookingStore>()(
           const commissionStore = useCommissionStore.getState();
 
           // Generate invoice from booking
-          const invoiceId = invoiceStore.generateInvoiceFromBooking(confirmation);
+          invoiceId = invoiceStore.generateInvoiceFromBooking(confirmation);
+          if (!invoiceId) {
+            throw new Error('Invoice generation failed - no invoice ID returned');
+          }
 
           // Generate commission record if invoice was created
-          if (invoiceId) {
-            commissionStore.generateCommissionFromBookingConfirmation(confirmation, invoiceId);
+          commissionId = commissionStore.generateCommissionFromBookingConfirmation(confirmation, invoiceId);
+          if (!commissionId) {
+            throw new Error('Commission generation failed - no commission ID returned');
           }
+
+          console.log('✅ Successfully generated invoice and commission for booking:', {
+            bookingId: confirmation.bookingId,
+            invoiceId,
+            commissionId
+          });
+
         } catch (error) {
-          console.error('Failed to auto-generate invoice/commission:', error);
+          console.error('❌ Failed to auto-generate invoice/commission:', error);
+
+          // Rollback: Delete invoice if it was created but commission failed
+          if (invoiceId && !commissionId) {
+            try {
+              const { useInvoiceStore } = await import('./invoice-store');
+              useInvoiceStore.getState().deleteInvoice(invoiceId);
+              console.log('⚠️ Rolled back invoice due to commission generation failure');
+            } catch (rollbackError) {
+              console.error('❌ Rollback failed:', rollbackError);
+            }
+          }
+
+          // Don't throw - log error but allow booking confirmation to proceed
+          // In production, you might want to queue this for retry or alert admin
+          console.warn('⚠️ Booking confirmed but financial records may be incomplete. Manual reconciliation may be required.');
         }
 
         return confirmation;
@@ -230,7 +264,7 @@ export const useBookingStore = create<BookingStore>()(
       // State Management
       clearSearchCache: () => {
         set({
-          cachedSearchResults: new Map(),
+          cachedSearchResults: {},
           currentSearchId: null,
         });
       },
