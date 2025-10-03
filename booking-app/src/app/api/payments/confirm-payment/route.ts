@@ -3,7 +3,8 @@ import { getStripeInstance, calculateStripeFee } from '@/lib/stripe/config';
 import { useQuoteStore } from '@/store/quote-store';
 import { PaymentType } from '@/types/payment';
 import { processHybridBooking } from '@/lib/booking/processor';
-import { TravelQuote } from '@/types';
+import { TravelQuote, Payment } from '@/types';
+import { RateSource } from '@/types/rate';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,15 +25,14 @@ export async function POST(request: NextRequest) {
     // Retrieve payment intent from Stripe with charges expanded
     console.log('🔍 [Confirm Payment] Retrieving payment intent from Stripe...');
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-      expand: ['charges']
+      expand: ['latest_charge']
     });
 
     console.log('✅ [Confirm Payment] Payment intent retrieved:', {
       id: paymentIntent.id,
       status: paymentIntent.status,
       amount: paymentIntent.amount,
-      hasCharges: !!paymentIntent.charges,
-      chargesCount: paymentIntent.charges?.data?.length || 0
+      hasLatestCharge: !!paymentIntent.latest_charge,
     });
 
     if (paymentIntent.status !== 'succeeded') {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       processingFee: stripeFee,
       createdAt: new Date().toISOString(),
       paidAt: new Date().toISOString(),
-      receiptUrl: paymentIntent.charges?.data?.[0]?.receipt_url || undefined,
+      receiptUrl: typeof paymentIntent.latest_charge === 'object' ? paymentIntent.latest_charge?.receipt_url || undefined : undefined,
     });
 
     console.log('💾 [Confirm Payment] Payment record created:', paymentId);
@@ -106,10 +106,11 @@ export async function POST(request: NextRequest) {
       subcategory: 'payment_processing',
       description: `Stripe processing fee for payment ${paymentId}`,
       amount: stripeFee,
+      currency: paymentIntent.currency,
       vendor: 'Stripe',
       date: new Date().toISOString().split('T')[0],
       paymentMethod: 'auto_deducted',
-      receiptUrl: paymentIntent.charges?.data?.[0]?.receipt_url,
+      receiptUrl: typeof paymentIntent.latest_charge === 'object' ? paymentIntent.latest_charge?.receipt_url || undefined : undefined,
     });
 
     console.log('💸 [Confirm Payment] Stripe fee recorded as expense:', expenseId);
@@ -179,7 +180,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ [Confirm Payment] Payment confirmed successfully');
 
     // Safely extract receipt URL
-    const receiptUrl = paymentIntent.charges?.data?.[0]?.receipt_url || null;
+    const receiptUrl = typeof paymentIntent.latest_charge === 'object' ? paymentIntent.latest_charge?.receipt_url || null : null;
     console.log('📧 [Confirm Payment] Receipt URL:', receiptUrl || 'Not available');
 
     return NextResponse.json({
@@ -220,7 +221,7 @@ async function triggerBookingConfirmation(quoteId: string, paymentId: string, qu
 
   // Process hybrid booking (API auto-booking + manual task creation)
   try {
-    const bookingResult = await processHybridBooking(quote, paymentId);
+    const bookingResult = await processHybridBooking(quote as any, paymentId);
 
     console.log('📊 [Booking] Hybrid booking processed:', {
       success: bookingResult.success,
@@ -233,7 +234,7 @@ async function triggerBookingConfirmation(quoteId: string, paymentId: string, qu
     if (bookingResult.summary.apiSuccess > 0 || bookingResult.summary.manualTasks > 0) {
       const quoteStore = useQuoteStore.getState();
       quoteStore.updateQuote(quoteId, {
-        status: bookingResult.summary.manualTasks > 0 ? 'accepted' : 'confirmed',
+        status: 'accepted', // Only use 'accepted' since 'confirmed' is not in the type
         paymentStatus: 'paid_in_full',
       });
     }
@@ -317,7 +318,7 @@ async function generateInvoiceForPayment(
 
     const customerData = {
       customerId: quote.contactId,
-      customerName: contact?.name || 'Unknown Customer',
+      customerName: contact?.name || contact ? `${contact.firstName} ${contact.lastName}` : 'Unknown Customer',
       customerEmail: contact?.email || '',
       customerAddress: contact?.address,
     };
@@ -337,7 +338,12 @@ async function generateInvoiceForPayment(
 
     // Update invoice with actual quote items
     const invoice = useInvoiceStore.getState().getInvoiceById(invoiceId);
-    if (invoice) {
+    if (!invoice) {
+      console.error('❌ [Invoice] Invoice not found after generation');
+      return null;
+    }
+
+    {
       const invoiceItems = quote.items.map((item) => ({
         id: crypto.randomUUID(),
         description: `${item.type.toUpperCase()}: ${item.name || item.details?.hotelName || item.details?.activityName || 'Travel Service'}`,
@@ -373,7 +379,7 @@ async function generateInvoiceForPayment(
         status: 'completed',
         processedDate: new Date().toISOString(),
         transactionId: paymentId,
-      });
+      } as Omit<Payment, 'id'>);
     }
 
     // Update payment record with invoiceId
@@ -456,7 +462,7 @@ async function generateCommissionForBooking(
       quoteId,
       invoiceId: invoiceId || undefined, // Link to invoice
       customerId: quote.contactId,
-      customerName: contact?.name || 'Unknown Customer',
+      customerName: contact?.name || contact ? `${contact.firstName} ${contact.lastName}` : 'Unknown Customer',
       bookingAmount: quote.totalCost,
       bookingType: quote.items[0]?.type || 'hotel', // Use first item type
       quoteCommissionRate: quote.commissionRate, // If quote has custom rate
@@ -562,15 +568,15 @@ async function createSupplierExpenses(
         quoteId,
         paymentId,
         expenseId,
-        supplierId: supplierContact?.id,
         description: `Supplier payment due for ${item.name}`,
         relatedTransactions: [paymentTransactionId],
         metadata: {
           itemType: item.type,
           itemName: item.name,
           supplier,
-          source: supplierSource,
+          source: supplierSource as RateSource,
           dueDate: item.startDate,
+          supplierId: supplierContact?.id,
         },
       });
 

@@ -70,7 +70,7 @@ export const useRateStore = create<RateStore>()(
         set((state) => ({
           rates: state.rates.map((rate) =>
             rate.id === id
-              ? { ...rate, ...updates, updatedAt: new Date().toISOString() }
+              ? { ...rate, ...updates, updatedAt: new Date().toISOString() } as Rate
               : rate
           ),
         }));

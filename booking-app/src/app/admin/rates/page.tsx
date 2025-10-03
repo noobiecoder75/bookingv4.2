@@ -566,9 +566,9 @@ Local Supplier,Beach Resort Cancun,BRCMX003,Ocean View Suite,2025-03-10,2025-03-
 
                       {/* Type Icon */}
                       <td className="px-4 py-3 text-center">
-                        {rate.type === 'hotel' && <Hotel className="w-5 h-5 text-blue-600 mx-auto" title="Hotel" />}
-                        {rate.type === 'activity' && <MapPin className="w-5 h-5 text-orange-600 mx-auto" title="Activity" />}
-                        {rate.type === 'transfer' && <Car className="w-5 h-5 text-purple-600 mx-auto" title="Transfer" />}
+                        {rate.type === 'hotel' && <Hotel className="w-5 h-5 text-blue-600 mx-auto" />}
+                        {rate.type === 'activity' && <MapPin className="w-5 h-5 text-orange-600 mx-auto" />}
+                        {rate.type === 'transfer' && <Car className="w-5 h-5 text-purple-600 mx-auto" />}
                       </td>
 
                       {/* Supplier */}

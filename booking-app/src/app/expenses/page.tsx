@@ -35,6 +35,7 @@ export default function ExpensesPage() {
     updateExpense,
     deleteExpense,
     getExpensesByCategory,
+    getExpensesByCategoryTotals,
     getExpensesByDateRange,
     getTotalExpenses,
     getExpenseReport,
@@ -125,7 +126,7 @@ export default function ExpensesPage() {
 
   // Calculate statistics
   const totalExpenses = getTotalExpenses(selectedPeriod.startDate, selectedPeriod.endDate);
-  const expensesByCategory = getExpensesByCategory(selectedPeriod.startDate, selectedPeriod.endDate);
+  const expensesByCategory = getExpensesByCategoryTotals(selectedPeriod.startDate, selectedPeriod.endDate);
   const unapprovedExpenses = filteredExpenses.filter(expense => !expense.approvedBy).length;
   const totalVendors = new Set(expenses.filter(e => e.vendor).map(e => e.vendor)).size;
 
@@ -241,7 +242,7 @@ export default function ExpensesPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {categories.map(({ value, label }) => {
-                  const amount = expensesByCategory[value];
+                  const amount = expensesByCategory[value] || 0;
                   const percentage = totalExpenses > 0 ? ((amount / totalExpenses) * 100).toFixed(1) : '0';
 
                   if (amount === 0) return null;

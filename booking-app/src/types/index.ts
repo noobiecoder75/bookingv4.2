@@ -2,8 +2,10 @@ export interface Contact {
   id: string;
   firstName: string;
   lastName: string;
+  name: string; // Full name (computed from firstName + lastName)
   email: string;
   phone?: string;
+  type?: 'customer' | 'supplier'; // Contact type
   address?: Address;
   preferences?: TravelPreferences;
   quotes: string[]; // Quote IDs
@@ -43,6 +45,8 @@ export interface ValidationOverride {
 export interface TravelQuote {
   id: string;
   contactId: string;
+  customerId: string; // Alias for contactId
+  customerName: string; // Contact's full name
   title: string;
   items: TravelItem[];
   totalCost: number;

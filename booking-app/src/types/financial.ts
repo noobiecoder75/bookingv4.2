@@ -1,6 +1,6 @@
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'partial';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'partial' | 'confirmed' | 'accepted';
 export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
-export type PaymentMethod = 'credit_card' | 'bank_transfer' | 'cash' | 'check' | 'paypal' | 'stripe';
+export type PaymentMethod = 'credit_card' | 'bank_transfer' | 'cash' | 'check' | 'paypal' | 'stripe' | 'auto_deducted';
 export type CommissionStatus = 'pending' | 'approved' | 'paid' | 'disputed';
 export type ExpenseCategory =
   | 'supplier_payment'

@@ -24,7 +24,7 @@ interface ExpenseStore {
 
   // Financial calculations
   getTotalExpenses: (startDate?: string, endDate?: string) => number;
-  getExpensesByCategory: (startDate?: string, endDate?: string) => Record<ExpenseCategory, number>;
+  getExpensesByCategoryTotals: (startDate?: string, endDate?: string) => Record<ExpenseCategory, number>;
   getMonthlyExpenses: (year: number) => Array<{ month: string; total: number; byCategory: Record<ExpenseCategory, number> }>;
 
   // Recurring expenses
@@ -135,7 +135,7 @@ export const useExpenseStore = create<ExpenseStore>()(
         return expenses.reduce((sum, expense) => sum + expense.amount, 0);
       },
 
-      getExpensesByCategory: (startDate, endDate) => {
+      getExpensesByCategoryTotals: (startDate, endDate) => {
         let expenses = get().expenses;
 
         if (startDate && endDate) {
@@ -265,7 +265,7 @@ export const useExpenseStore = create<ExpenseStore>()(
         const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
         // Expenses by category
-        const expensesByCategory = get().getExpensesByCategory(startDate, endDate);
+        const expensesByCategory = get().getExpensesByCategoryTotals(startDate, endDate);
 
         // Top vendors
         const vendorTotals: Record<string, number> = {};

@@ -1,4 +1,4 @@
-export type RateSource = 'offline_platform' | 'offline_agent' | 'api_hotelbeds';
+export type RateSource = 'offline_platform' | 'offline_agent' | 'api_hotelbeds' | 'api_amadeus' | 'api_sabre';
 export type RateType = 'hotel' | 'activity' | 'transfer';
 
 /**

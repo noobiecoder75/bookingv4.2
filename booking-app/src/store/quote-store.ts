@@ -52,8 +52,12 @@ interface QuoteStore {
 }
 
 // Create debounced calculation function outside the store
-const debouncedCalculateTotal = debounce((quoteId: string, getState: () => QuoteStore, updateQuote: (id: string, updates: Partial<TravelQuote>) => void) => {
-  const quote = getState().quotes.find((q) => q.id === quoteId);
+const debouncedCalculateTotal = debounce((quoteId: unknown, getState: unknown, updateQuote: unknown) => {
+  const getStateFn = getState as () => QuoteStore;
+  const updateQuoteFn = updateQuote as (id: string, updates: Partial<TravelQuote>) => void;
+  const quoteIdStr = quoteId as string;
+
+  const quote = getStateFn().quotes.find((q) => q.id === quoteIdStr);
   if (!quote) return 0;
 
   const total = quote.items.reduce(
@@ -61,7 +65,7 @@ const debouncedCalculateTotal = debounce((quoteId: string, getState: () => Quote
     0
   );
 
-  updateQuote(quoteId, { totalCost: total });
+  updateQuoteFn(quoteIdStr, { totalCost: total });
   return total;
 }, 300);
 
