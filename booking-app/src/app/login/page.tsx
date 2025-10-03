@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Mail, Lock, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 
+export const dynamic = 'force-dynamic';
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
