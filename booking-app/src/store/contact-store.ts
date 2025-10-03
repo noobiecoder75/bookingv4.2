@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Contact } from '@/types';
+import { RateSource } from '@/types/rate';
 
 interface ContactStore {
   contacts: Contact[];
@@ -11,6 +12,8 @@ interface ContactStore {
   searchContacts: (query: string) => Contact[];
   addQuoteToContact: (contactId: string, quoteId: string) => void;
   removeQuoteFromContact: (contactId: string, quoteId: string) => void;
+  findSupplierByName: (name: string) => Contact | undefined;
+  createSupplierFromRate: (supplierName: string, source: RateSource) => string;
 }
 
 export const useContactStore = create<ContactStore>()(
@@ -82,6 +85,44 @@ export const useContactStore = create<ContactStore>()(
               : contact
           ),
         }));
+      },
+
+      findSupplierByName: (name) => {
+        const { contacts } = get();
+        const normalizedName = name.toLowerCase().trim();
+
+        return contacts.find(
+          (contact) =>
+            contact.type === 'supplier' &&
+            (contact.firstName + ' ' + contact.lastName).toLowerCase().trim() === normalizedName
+        );
+      },
+
+      createSupplierFromRate: (supplierName, source) => {
+        const supplierId = crypto.randomUUID();
+
+        // Split name into first/last (simple approach)
+        const nameParts = supplierName.trim().split(' ');
+        const firstName = nameParts[0] || supplierName;
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const newSupplier: Contact = {
+          id: supplierId,
+          firstName,
+          lastName,
+          email: '', // To be filled later
+          phone: '',
+          type: 'supplier',
+          tags: [source, 'auto-created'],
+          quotes: [],
+          createdAt: new Date(),
+        };
+
+        set((state) => ({
+          contacts: [...state.contacts, newSupplier],
+        }));
+
+        return supplierId;
       },
     }),
     {

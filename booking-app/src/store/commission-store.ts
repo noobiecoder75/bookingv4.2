@@ -33,6 +33,7 @@ interface CommissionStore {
       agentName: string;
       bookingId: string;
       quoteId: string;
+      invoiceId?: string; // Link to invoice
       customerId: string;
       customerName: string;
       bookingAmount: number;
@@ -189,6 +190,7 @@ export const useCommissionStore = create<CommissionStore>()(
 
         const commissionData = {
           ...bookingData,
+          invoiceId: bookingData.invoiceId, // Include invoice link
           commissionRate,
           commissionAmount,
           status: 'pending' as CommissionStatus,

@@ -14,7 +14,17 @@ interface PaymentModalProps {
   quote: TravelQuote;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (paymentData?: PaymentConfirmationData) => void;
+}
+
+interface PaymentConfirmationData {
+  paymentId: string;
+  invoiceId?: string;
+  commissionId?: string;
+  paymentStatus: 'unpaid' | 'deposit_paid' | 'partially_paid' | 'paid_in_full';
+  totalPaid: number;
+  remainingBalance: number;
+  receiptUrl?: string;
 }
 
 interface PriceChangeWarning {
@@ -223,7 +233,7 @@ export function PaymentModal({ quote, isOpen, onClose, onSuccess }: PaymentModal
 interface PaymentFormProps {
   quote: TravelQuote;
   quoteId: string;
-  onSuccess: () => void;
+  onSuccess: (paymentData?: PaymentConfirmationData) => void;
   onError: (error: string) => void;
 }
 
@@ -285,7 +295,17 @@ function PaymentForm({ quote, quoteId, onSuccess, onError }: PaymentFormProps) {
 
         if (data.success) {
           console.log('🎉 [PaymentForm] Payment completed successfully!');
-          onSuccess();
+          // Pass payment confirmation data back to parent
+          const paymentData: PaymentConfirmationData = {
+            paymentId: data.paymentId,
+            invoiceId: data.invoiceId,
+            commissionId: data.commissionId,
+            paymentStatus: data.paymentStatus,
+            totalPaid: data.totalPaid,
+            remainingBalance: data.remainingBalance,
+            receiptUrl: data.receiptUrl,
+          };
+          onSuccess(paymentData);
         } else {
           console.error('❌ [PaymentForm] Confirmation failed:', data.error);
           onError(data.error || 'Payment confirmation failed');

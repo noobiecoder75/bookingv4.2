@@ -81,6 +81,7 @@ export interface Commission {
   agentName: string;
   bookingId: string;
   quoteId: string;
+  invoiceId?: string; // Link to invoice that generated this commission
   customerId: string;
   customerName: string;
 
@@ -125,6 +126,10 @@ export interface Expense {
   receiptUrl?: string;
   approvedBy?: string;
   approvedDate?: string;
+
+  // Payment status and method
+  status?: 'pending' | 'paid' | 'cancelled';
+  paymentMethod?: PaymentMethod;
 
   isRecurring?: boolean;
   recurringFrequency?: 'monthly' | 'quarterly' | 'yearly';

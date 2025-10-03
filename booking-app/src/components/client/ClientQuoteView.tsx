@@ -36,16 +36,25 @@ interface ClientQuoteViewProps {
   onQuoteAction?: (action: 'accept' | 'reject' | 'message' | 'payment') => void;
 }
 
-export function ClientQuoteView({ 
-  quote, 
-  contact, 
+interface PaymentConfirmationData {
+  paymentId: string;
+  paymentStatus: 'unpaid' | 'deposit_paid' | 'partially_paid' | 'paid_in_full';
+  totalPaid: number;
+  remainingBalance: number;
+  receiptUrl?: string;
+}
+
+export function ClientQuoteView({
+  quote,
+  contact,
   agentName = 'Your Travel Agent',
   agentEmail,
-  onQuoteAction 
+  onQuoteAction
 }: ClientQuoteViewProps) {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [quoteStatus, setQuoteStatus] = useState(quote.status);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentConfirmationData | null>(null);
 
   const getItemIcon = (type: string) => {
     switch (type) {
@@ -151,12 +160,23 @@ export function ClientQuoteView({
     console.log('Message sent:', { message, requestChanges, quoteId: quote.id });
   };
 
-  const handlePaymentSuccess = () => {
-    console.log('✅ Payment successful for quote:', quote.id);
+  const handlePaymentSuccess = (paymentData?: PaymentConfirmationData) => {
+    console.log('✅ Payment successful for quote:', quote.id, paymentData);
+
+    if (paymentData) {
+      setPaymentInfo(paymentData);
+      // Update quote status based on payment status
+      if (paymentData.paymentStatus === 'paid_in_full') {
+        setQuoteStatus('confirmed');
+      } else if (paymentData.paymentStatus === 'deposit_paid') {
+        setQuoteStatus('accepted');
+      }
+    } else {
+      setQuoteStatus('accepted');
+    }
+
     onQuoteAction?.('payment');
     setShowPaymentModal(false);
-    setQuoteStatus('accepted');
-    // You could show a success message or redirect here
   };
 
   const handleDownloadCalendar = () => {
@@ -202,25 +222,43 @@ export function ClientQuoteView({
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <Badge 
-                className={`mb-2 ${
-                  quoteStatus === 'sent' ? 'bg-blue-100 text-blue-800' :
-                  quoteStatus === 'accepted' ? 'bg-green-100 text-green-800' :
-                  quoteStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {quoteStatus === 'sent' ? 'Pending Response' :
-                 quoteStatus === 'accepted' ? 'Accepted' :
-                 quoteStatus === 'rejected' ? 'Rejected' :
-                 quoteStatus.charAt(0).toUpperCase() + quoteStatus.slice(1)}
-              </Badge>
+            <div className="text-right space-y-2">
+              <div className="flex flex-col items-end space-y-2">
+                <Badge
+                  className={`${
+                    quoteStatus === 'sent' ? 'bg-blue-100 text-blue-800' :
+                    quoteStatus === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    quoteStatus === 'accepted' ? 'bg-green-100 text-green-800' :
+                    quoteStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {quoteStatus === 'sent' ? 'Pending Response' :
+                   quoteStatus === 'confirmed' ? 'Confirmed' :
+                   quoteStatus === 'accepted' ? 'Accepted' :
+                   quoteStatus === 'rejected' ? 'Rejected' :
+                   quoteStatus.charAt(0).toUpperCase() + quoteStatus.slice(1)}
+                </Badge>
+
+                {paymentInfo && (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                    {paymentInfo.paymentStatus === 'paid_in_full' ? '💰 Paid in Full' :
+                     paymentInfo.paymentStatus === 'deposit_paid' ? '💳 Deposit Paid' :
+                     '💵 Payment Received'}
+                  </Badge>
+                )}
+              </div>
+
               <div className="text-right">
                 <div className="text-sm text-gray-600">Total Cost</div>
                 <div className="text-2xl font-bold text-gray-900">
                   {formatCurrency(quote.totalCost)}
                 </div>
+                {paymentInfo && paymentInfo.remainingBalance > 0 && (
+                  <div className="text-xs text-orange-600 mt-1">
+                    Balance Due: {formatCurrency(paymentInfo.remainingBalance)}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -367,7 +405,7 @@ export function ClientQuoteView({
         </div>
 
         {/* Action Buttons */}
-        {!isQuoteFinal && quote.status === 'sent' && (
+        {!isQuoteFinal && quoteStatus === 'sent' && (
           <div className="glass-card rounded-2xl shadow-medium border-glass p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">What would you like to do?</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -412,34 +450,84 @@ export function ClientQuoteView({
         {isQuoteFinal && (
           <div className="glass-card rounded-2xl shadow-medium border-glass p-6">
             <div className={`flex items-center space-x-3 ${
-              quoteStatus === 'accepted' ? 'text-green-600' : 'text-red-600'
+              quoteStatus === 'accepted' || quoteStatus === 'confirmed' ? 'text-green-600' : 'text-red-600'
             }`}>
-              {quoteStatus === 'accepted' ? (
+              {quoteStatus === 'accepted' || quoteStatus === 'confirmed' ? (
                 <Check className="w-6 h-6" />
               ) : (
                 <X className="w-6 h-6" />
               )}
               <div>
                 <h3 className="text-lg font-semibold">
-                  Quote {quoteStatus === 'accepted' ? 'Accepted' : 'Declined'}
+                  Quote {quoteStatus === 'accepted' || quoteStatus === 'confirmed' ? 'Accepted' : 'Declined'}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {quoteStatus === 'accepted' 
+                  {quoteStatus === 'accepted' || quoteStatus === 'confirmed'
                     ? 'Thank you for accepting this quote. Your travel agent will be in touch shortly with next steps.'
                     : 'You have declined this quote. Feel free to reach out if you\'d like to discuss alternatives.'
                   }
                 </p>
               </div>
             </div>
-            
-            {quoteStatus === 'accepted' && (
+
+            {/* Payment Status Display */}
+            {paymentInfo && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <Check className="w-5 h-5 text-green-600 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-green-800 mb-1">
+                      {paymentInfo.paymentStatus === 'paid_in_full' ? 'Payment Complete!' : 'Deposit Received!'}
+                    </h4>
+                    <div className="text-sm text-green-700 space-y-1">
+                      <p>
+                        {paymentInfo.paymentStatus === 'paid_in_full'
+                          ? `Your payment of ${formatCurrency(paymentInfo.totalPaid)} has been received and processed.`
+                          : `Your deposit of ${formatCurrency(paymentInfo.totalPaid)} has been received.`
+                        }
+                      </p>
+                      {paymentInfo.remainingBalance > 0 && (
+                        <p className="font-medium">
+                          Remaining balance: {formatCurrency(paymentInfo.remainingBalance)}
+                        </p>
+                      )}
+                      {paymentInfo.receiptUrl && (
+                        <a
+                          href={paymentInfo.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-green-600 hover:text-green-700 underline mt-2"
+                        >
+                          View Receipt →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(quoteStatus === 'accepted' || quoteStatus === 'confirmed') && !paymentInfo && (
               <div className="mt-4 pt-4 border-t">
-                <Button 
+                <Button
                   onClick={() => setShowPaymentModal(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <CreditCard className="w-5 h-5 mr-2" />
                   Proceed to Payment
+                </Button>
+              </div>
+            )}
+
+            {/* Show remaining balance payment option if deposit was paid */}
+            {paymentInfo && paymentInfo.paymentStatus === 'deposit_paid' && paymentInfo.remainingBalance > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <Button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Pay Remaining Balance ({formatCurrency(paymentInfo.remainingBalance)})
                 </Button>
               </div>
             )}

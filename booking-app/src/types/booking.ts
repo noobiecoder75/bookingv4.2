@@ -96,6 +96,11 @@ export interface EnhancedHotelDetails {
     };
   };
   confirmationNumber?: string;
+
+  // Cost tracking fields (for markup + profit calculation)
+  supplierCost?: number;    // What we pay the supplier (HotelBeds, etc.)
+  clientPrice?: number;     // What client pays (supplierCost + markup)
+  profit?: number;          // Profit amount (clientPrice - supplierCost)
 }
 
 export interface EnhancedActivityDetails {

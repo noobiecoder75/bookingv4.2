@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { TravelItem } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -180,7 +181,7 @@ function locationsMatch(location1: string, location2: string): boolean {
  * Detect destination mismatches between flights and hotels
  */
 export function detectDestinationMismatches(
-  items: Array<{ id: string; type: string; name: string; details: Record<string, unknown> }>
+  items: TravelItem[]
 ): DestinationMismatch[] {
   const mismatches: DestinationMismatch[] = [];
 

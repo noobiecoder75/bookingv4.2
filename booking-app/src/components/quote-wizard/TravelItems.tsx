@@ -13,6 +13,8 @@ import { formatCurrency, getTravelItemColor } from '@/lib/utils';
 import { Plane, Hotel, MapPin, Car, Calendar as CalendarIcon } from 'lucide-react';
 import { FlightBuilder } from '@/components/item-builders/FlightBuilder';
 import { HotelBuilder } from '@/components/item-builders/HotelBuilder';
+import { ActivityBuilder } from '@/components/item-builders/ActivityBuilder';
+import { TransferBuilder } from '@/components/item-builders/TransferBuilder';
 import { EditItemModal } from '@/components/item-editors/EditItemModal';
 import { QuickEditPopover } from '@/components/item-editors/QuickEditPopover';
 import { TravelListView } from './TravelListView';
@@ -34,11 +36,10 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   const { addItemToQuote, removeItemFromQuote, updateItemInQuote } = useQuoteStore();
   const [view, setView] = useState<View>('month'); // Default to month view for better overview
   const [date, setDate] = useState(new Date(quote.travelDates.start));
-  const [showForm, setShowForm] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<SlotInfo | null>(null);
-  const [itemType, setItemType] = useState<'flight' | 'hotel' | 'activity' | 'transfer'>('flight');
   const [showFlightBuilder, setShowFlightBuilder] = useState(false);
   const [showHotelBuilder, setShowHotelBuilder] = useState(false);
+  const [showActivityBuilder, setShowActivityBuilder] = useState(false);
+  const [showTransferBuilder, setShowTransferBuilder] = useState(false);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [filteredItems, setFilteredItems] = useState<TravelItem[]>([]);
   
@@ -305,8 +306,6 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
   // Add new travel item
   const handleAddItem = (itemData: Omit<TravelItem, 'id'>) => {
     addItemToQuote(quote.id, itemData);
-    setShowForm(false);
-    setSelectedSlot(null);
   };
 
   // Handle quick edit save
@@ -348,10 +347,10 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
         setShowHotelBuilder(true);
         break;
       case 'activity':
+        setShowActivityBuilder(true);
+        break;
       case 'transfer':
-        setSelectedSlot(slotInfo);
-        setItemType(itemType);
-        setShowForm(true);
+        setShowTransferBuilder(true);
         break;
     }
   };
@@ -541,28 +540,24 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           <Hotel className="w-4 h-4" />
           <span>Hotel</span>
         </Button>
-        {(['activity', 'transfer'] as const).map((type) => (
-          <Button
-            key={type}
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setItemType(type);
-              const startDate = new Date(quote.travelDates.start);
-              setSelectedSlot({
-                start: startDate,
-                end: startDate,
-                slots: [],
-                action: 'select'
-              });
-              setShowForm(true);
-            }}
-            className="flex items-center space-x-1"
-          >
-            {getItemIcon(type)}
-            <span className="capitalize">{type}</span>
-          </Button>
-        ))}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowActivityBuilder(true)}
+          className="flex items-center space-x-1"
+        >
+          <MapPin className="w-4 h-4" />
+          <span>Activity</span>
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowTransferBuilder(true)}
+          className="flex items-center space-x-1"
+        >
+          <Car className="w-4 h-4" />
+          <span>Transfer</span>
+        </Button>
       </div>
 
       {/* Main Content Area */}
@@ -646,8 +641,17 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
               <span className="text-gray-600 text-sm">added to quote</span>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <div className="text-sm text-gray-600">Total</div>
+              <div className="text-right space-y-1">
+                <div className="flex items-center justify-end space-x-3 text-xs text-gray-500">
+                  <span>Cost: {formatCurrency(currentQuote.items.reduce((sum, item) => sum + (item.supplierCost || item.price * 0.80), 0))}</span>
+                  <span className="text-green-600">
+                    +Markup: {formatCurrency(currentQuote.items.reduce((sum, item) => {
+                      const supplierCost = item.supplierCost || item.price * 0.80;
+                      return sum + (item.price - supplierCost);
+                    }, 0))}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-600">Client Total</div>
                 <div className="text-lg font-bold text-gray-900">
                   {formatCurrency(currentQuote.totalCost)}
                 </div>
@@ -662,19 +666,6 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
 
       {/* Bottom padding to prevent content overlap */}
       {currentQuote.items.length > 0 && <div className="h-20" />}
-
-      {/* Add Item Form Modal */}
-      {showForm && selectedSlot && itemType !== 'flight' && itemType !== 'hotel' && (
-        <QuickItemForm
-          itemType={itemType}
-          selectedSlot={selectedSlot}
-          onSubmit={handleAddItem}
-          onCancel={() => {
-            setShowForm(false);
-            setSelectedSlot(null);
-          }}
-        />
-      )}
 
       {/* Flight Builder Modal */}
       {showFlightBuilder && (
@@ -697,6 +688,32 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
             setShowHotelBuilder(false);
           }}
           onCancel={() => setShowHotelBuilder(false)}
+          tripStartDate={new Date(quote.travelDates.start)}
+          tripEndDate={new Date(quote.travelDates.end)}
+        />
+      )}
+
+      {/* Activity Builder Modal */}
+      {showActivityBuilder && (
+        <ActivityBuilder
+          onSubmit={(activityData) => {
+            handleAddItem(activityData);
+            setShowActivityBuilder(false);
+          }}
+          onCancel={() => setShowActivityBuilder(false)}
+          tripStartDate={new Date(quote.travelDates.start)}
+          tripEndDate={new Date(quote.travelDates.end)}
+        />
+      )}
+
+      {/* Transfer Builder Modal */}
+      {showTransferBuilder && (
+        <TransferBuilder
+          onSubmit={(transferData) => {
+            handleAddItem(transferData);
+            setShowTransferBuilder(false);
+          }}
+          onCancel={() => setShowTransferBuilder(false)}
           tripStartDate={new Date(quote.travelDates.start)}
           tripEndDate={new Date(quote.travelDates.end)}
         />
@@ -762,169 +779,6 @@ export function TravelItems({ quote, onComplete }: TravelItemsProps) {
           Add Transfer
         </ContextMenuItem>
       </ContextMenu>
-    </div>
-  );
-}
-
-interface QuickItemFormProps {
-  itemType: 'flight' | 'hotel' | 'activity' | 'transfer';
-  selectedSlot: SlotInfo;
-  onSubmit: (item: Omit<TravelItem, 'id'>) => void;
-  onCancel: () => void;
-}
-
-function QuickItemForm({ itemType, selectedSlot, onSubmit, onCancel }: QuickItemFormProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    startDate: moment(selectedSlot.start).format('YYYY-MM-DD'),
-    endDate: moment(selectedSlot.end).format('YYYY-MM-DD'),
-    startTime: moment(selectedSlot.start).format('HH:mm'),
-    endTime: moment(selectedSlot.end).format('HH:mm'),
-    price: '',
-    quantity: '1',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Combine date and time for proper datetime
-    const startDateTime = moment(`${formData.startDate} ${formData.startTime}`).toISOString();
-    const endDateTime = formData.endDate && formData.endTime 
-      ? moment(`${formData.endDate} ${formData.endTime}`).toISOString()
-      : undefined;
-    
-    onSubmit({
-      type: itemType,
-      name: formData.name,
-      startDate: startDateTime,
-      endDate: endDateTime,
-      price: parseFloat(formData.price),
-      quantity: parseInt(formData.quantity),
-      details: {},
-    });
-  };
-
-  const getPlaceholder = () => {
-    switch (itemType) {
-      case 'flight': return 'e.g., Flight to London';
-      case 'hotel': return 'e.g., Marriott Downtown';
-      case 'activity': return 'e.g., City Walking Tour';
-      case 'transfer': return 'e.g., Airport Transfer';
-      default: return 'Enter item name';
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg w-full max-w-md p-6">
-        <h3 className="text-lg font-semibold mb-4 capitalize flex items-center space-x-2">
-          <div style={{ color: getTravelItemColor(itemType) }}>
-            {itemType === 'flight' && <Plane className="w-5 h-5" />}
-            {itemType === 'hotel' && <Hotel className="w-5 h-5" />}
-            {itemType === 'activity' && <MapPin className="w-5 h-5" />}
-            {itemType === 'transfer' && <Car className="w-5 h-5" />}
-          </div>
-          <span>Add {itemType}</span>
-        </h3>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder={getPlaceholder()}
-              autoFocus
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="startDate">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                required
-                value={formData.startDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="endDate">End Date {itemType !== 'hotel' && '(Optional)'}</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                required={itemType === 'hotel'}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="startTime">Start Time</Label>
-              <Input
-                id="startTime"
-                type="time"
-                required
-                value={formData.startTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="endTime">End Time {itemType !== 'hotel' && '(Optional)'}</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={formData.endTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                required={itemType === 'hotel'}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="price">Price ($)</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                required
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                placeholder="0.00"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                required
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" className="capitalize">
-              Add {itemType}
-            </Button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

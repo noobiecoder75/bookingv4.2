@@ -114,7 +114,7 @@ export function QuotesDashboard() {
   }
 
   // Calculate dashboard stats
-  const totalValue = quotes.reduce((sum, quote) => sum + quote.totalCost, 0);
+  const totalQuoteValue = quotes.reduce((sum, quote) => sum + quote.totalCost, 0);
   const activeQuotes = quotes.filter(q => q.status !== 'rejected').length;
   const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
   const conversionRate = quotes.length > 0 ? (acceptedQuotes / quotes.length) * 100 : 0;
@@ -138,8 +138,9 @@ export function QuotesDashboard() {
         <div className="glass-card rounded-2xl p-6 hover-lift transition-smooth">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total Value</p>
-              <p className="text-3xl font-bold text-gray-900">${totalValue.toLocaleString()}</p>
+              <p className="text-sm font-medium text-gray-600 mb-1">Total Quote Value</p>
+              <p className="text-3xl font-bold text-gray-900">${totalQuoteValue.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-1">All quotes combined</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-white" />

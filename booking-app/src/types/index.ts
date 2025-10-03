@@ -81,6 +81,7 @@ export interface TravelItem {
   apiProvider?: 'hotelbeds' | 'amadeus' | 'sabre'; // Which API provider if applicable
 
   // Supplier tracking
+  supplier?: string; // Supplier/vendor name (e.g., "Marriott", "HotelBeds", "Viator")
   supplierSource?: 'api_hotelbeds' | 'api_amadeus' | 'api_sabre' | 'offline_platform' | 'offline_agent';
   supplierCost?: number; // Nett cost we pay supplier
   clientPrice?: number; // What client pays (renamed from price for clarity)

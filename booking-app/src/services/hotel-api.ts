@@ -140,8 +140,20 @@ export class HotelService {
   }
 
   private convertSimplifiedToEnhanced(hotel: SimplifiedHotel, nights: number): EnhancedHotelDetails {
+    // Import markup utilities
+    const { calculateClientPrice, calculateProfit } = require('@/lib/pricing/markup-config');
+
+    // hotel.price is the supplier cost (what HotelBeds charges)
+    const supplierCost = hotel.price;
+
+    // Apply markup to get client price
+    const clientPrice = calculateClientPrice(supplierCost);
+
+    // Calculate profit
+    const profit = calculateProfit(supplierCost, clientPrice);
+
     // Calculate breakdown ensuring total equals sum of parts (no rounding discrepancies)
-    const totalPrice = hotel.price;
+    const totalPrice = clientPrice;
     const taxes = Math.round(totalPrice * 0.12);
     const fees = Math.round(totalPrice * 0.03);
     const roomRate = totalPrice - taxes - fees; // Balance automatically
@@ -184,7 +196,11 @@ export class HotelService {
         roomRate,
         taxes,
         fees
-      }
+      },
+      // NEW: Add cost tracking fields
+      supplierCost,     // What HotelBeds charges
+      clientPrice,      // What client pays (with markup)
+      profit            // Markup amount
     };
   }
 

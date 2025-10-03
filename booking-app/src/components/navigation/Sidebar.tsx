@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,11 @@ import {
   DollarSign,
   ChevronLeft,
   ChevronRight,
-  Settings
+  ChevronDown,
+  ChevronUp,
+  Settings,
+  ClipboardList,
+  Upload
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -28,10 +33,21 @@ export function Sidebar() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const { collapsed, mobileMenuOpen, toggleCollapsed, setMobileMenuOpen } = useSidebarStore();
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['finances']));
 
   const handleLogout = () => {
     logout();
     router.push('/');
+  };
+
+  const toggleMenu = (menuKey: string) => {
+    const newExpanded = new Set(expandedMenus);
+    if (newExpanded.has(menuKey)) {
+      newExpanded.delete(menuKey);
+    } else {
+      newExpanded.add(menuKey);
+    }
+    setExpandedMenus(newExpanded);
   };
 
   const navItems = [
@@ -54,28 +70,22 @@ export function Sidebar() {
       active: pathname === '/timeline'
     },
     {
-      href: '/finances',
+      href: '/admin/finances',
       label: 'Finances',
       icon: TrendingUp,
-      active: pathname?.startsWith('/finances')
+      active: pathname?.startsWith('/admin/finances')
     },
     {
-      href: '/invoices',
-      label: 'Invoices',
-      icon: Receipt,
-      active: pathname?.startsWith('/invoices')
+      href: '/tasks',
+      label: 'Tasks',
+      icon: ClipboardList,
+      active: pathname?.startsWith('/tasks')
     },
     {
-      href: '/commissions',
-      label: 'Commissions',
-      icon: DollarSign,
-      active: pathname?.startsWith('/commissions')
-    },
-    {
-      href: '/expenses',
-      label: 'Expenses',
-      icon: CreditCard,
-      active: pathname?.startsWith('/expenses')
+      href: '/admin/rates',
+      label: 'Rate Upload',
+      icon: Upload,
+      active: pathname?.startsWith('/admin/rates')
     },
     {
       href: '/admin/settings',
@@ -164,24 +174,83 @@ export function Sidebar() {
           <div className="h-4"></div>
 
           {/* Regular Navigation Items */}
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`
-                flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
-                ${item.active
-                  ? 'bg-gray-100 text-gray-900 font-medium shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }
-                ${collapsed ? 'justify-center' : ''}
-              `}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className={collapsed ? "w-8 h-8" : "w-5 h-5"} />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            // @ts-ignore - Handle nested menu items
+            if (item.children) {
+              const isExpanded = expandedMenus.has(item.key || '');
+              const hasActiveChild = item.children.some((child: any) => child.active);
+
+              return (
+                <div key={item.key}>
+                  {/* Parent Menu Item */}
+                  <button
+                    onClick={() => !collapsed && toggleMenu(item.key || '')}
+                    className={`
+                      w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
+                      ${item.active
+                        ? 'bg-gray-100 text-gray-900 font-medium shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }
+                      ${collapsed ? 'justify-center' : 'justify-between'}
+                    `}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
+                      <item.icon className={collapsed ? "w-8 h-8" : "w-5 h-5"} />
+                      {!collapsed && <span>{item.label}</span>}
+                    </div>
+                    {!collapsed && (
+                      isExpanded ?
+                        <ChevronUp className="w-4 h-4" /> :
+                        <ChevronDown className="w-4 h-4" />
+                    )}
+                  </button>
+
+                  {/* Child Menu Items */}
+                  {!collapsed && isExpanded && (
+                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                      {item.children.map((child: any) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={`
+                            flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm
+                            ${child.active
+                              ? 'bg-gray-100 text-gray-900 font-medium'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            }
+                          `}
+                        >
+                          <child.icon className="w-4 h-4" />
+                          <span>{child.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Regular menu item (no children)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`
+                  flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
+                  ${item.active
+                    ? 'bg-gray-100 text-gray-900 font-medium shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }
+                  ${collapsed ? 'justify-center' : ''}
+                `}
+                title={collapsed ? item.label : undefined}
+              >
+                <item.icon className={collapsed ? "w-8 h-8" : "w-5 h-5"} />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* User Section */}
@@ -243,23 +312,79 @@ export function Sidebar() {
               <div className="h-4"></div>
 
               {/* Regular Navigation Items */}
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
-                    ${item.active
-                      ? 'bg-gray-100 text-gray-900 font-medium shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                // @ts-ignore - Handle nested menu items
+                if (item.children) {
+                  const isExpanded = expandedMenus.has(item.key || '');
+
+                  return (
+                    <div key={item.key}>
+                      {/* Parent Menu Item */}
+                      <button
+                        onClick={() => toggleMenu(item.key || '')}
+                        className={`
+                          w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 justify-between
+                          ${item.active
+                            ? 'bg-gray-100 text-gray-900 font-medium shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </div>
+                        {isExpanded ?
+                          <ChevronUp className="w-4 h-4" /> :
+                          <ChevronDown className="w-4 h-4" />
+                        }
+                      </button>
+
+                      {/* Child Menu Items */}
+                      {isExpanded && (
+                        <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                          {item.children.map((child: any) => (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className={`
+                                flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm
+                                ${child.active
+                                  ? 'bg-gray-100 text-gray-900 font-medium'
+                                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                }
+                              `}
+                            >
+                              <child.icon className="w-4 h-4" />
+                              <span>{child.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Regular menu item (no children)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`
+                      flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
+                      ${item.active
+                        ? 'bg-gray-100 text-gray-900 font-medium shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
 
             {/* User Section */}

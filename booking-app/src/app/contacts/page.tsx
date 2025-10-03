@@ -59,7 +59,18 @@ export default function ContactsPage() {
 
   const getCustomerValue = (contactId: string) => {
     const customerInvoices = getInvoicesByCustomer(contactId);
-    return customerInvoices.reduce((total, invoice) => total + invoice.total, 0);
+    // Only count paid invoices as actual customer value
+    return customerInvoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((total, invoice) => total + invoice.total, 0);
+  };
+
+  const getCustomerOutstanding = (contactId: string) => {
+    const customerInvoices = getInvoicesByCustomer(contactId);
+    // Calculate outstanding amount from unpaid invoices
+    return customerInvoices
+      .filter(invoice => invoice.status !== 'paid' && invoice.status !== 'cancelled')
+      .reduce((total, invoice) => total + invoice.remainingAmount, 0);
   };
 
   const getCustomerBookings = (contactId: string) => {
@@ -99,6 +110,7 @@ export default function ContactsPage() {
     const customerQuotes = getQuotesByContact(contact.id);
     const customerInvoices = getInvoicesByCustomer(contact.id);
     const totalValue = getCustomerValue(contact.id);
+    const outstandingAmount = getCustomerOutstanding(contact.id);
     const totalBookings = getCustomerBookings(contact.id);
     const lastBooking = getLastBookingDate(contact.id);
     const tierInfo = getCustomerTier(totalValue);
@@ -107,8 +119,6 @@ export default function ContactsPage() {
     const pendingQuotes = customerQuotes.filter(q => q.status === 'sent');
     const paidInvoices = customerInvoices.filter(i => i.status === 'paid');
     const outstandingInvoices = customerInvoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled');
-
-    const outstandingAmount = outstandingInvoices.reduce((sum, inv) => sum + inv.remainingAmount, 0);
 
     return (
       <div className="space-y-6">
@@ -174,6 +184,24 @@ export default function ContactsPage() {
               <div className="text-2xl font-bold text-green-600">
                 {formatCurrency(totalValue)}
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                From paid invoices
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+              <Receipt className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${outstandingAmount > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+                {formatCurrency(outstandingAmount)}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Unpaid invoices
+              </p>
             </CardContent>
           </Card>
 

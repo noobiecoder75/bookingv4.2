@@ -79,11 +79,19 @@ export default function ClientQuotePage() {
   const handleQuoteAction = (action: 'accept' | 'reject' | 'message' | 'payment') => {
     console.log('Quote action:', action, 'for quote:', quoteId);
     // In a real implementation, this would send the action to your backend
-    
+
     // Update quote status if accepting/rejecting
     if (action === 'accept' || action === 'reject') {
       const { updateQuoteStatus } = useQuoteStore.getState();
       updateQuoteStatus(quoteId, action === 'accept' ? 'accepted' : 'rejected');
+    }
+
+    // Reload quote after payment to get updated status
+    if (action === 'payment') {
+      const updatedQuote = getQuoteById(quoteId);
+      if (updatedQuote) {
+        setQuote(updatedQuote);
+      }
     }
   };
 

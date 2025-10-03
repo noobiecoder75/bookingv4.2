@@ -268,6 +268,7 @@ export const useQuoteStore = create<QuoteStore>()(
           (acc, quote) => {
             acc.totalQuotes++;
             acc[`${quote.status}Quotes`]++;
+            // Calculate pipeline revenue from accepted quotes (potential revenue)
             if (quote.status === 'accepted') {
               acc.totalRevenue += quote.totalCost;
             }
@@ -279,13 +280,13 @@ export const useQuoteStore = create<QuoteStore>()(
             sentQuotes: 0,
             acceptedQuotes: 0,
             rejectedQuotes: 0,
-            totalRevenue: 0,
+            totalRevenue: 0, // This represents pipeline value from accepted quotes
           }
         );
-        
+
         return {
           ...stats,
-          averageQuoteValue: stats.totalQuotes > 0 
+          averageQuoteValue: stats.totalQuotes > 0
             ? quotes.reduce((sum, quote) => sum + quote.totalCost, 0) / stats.totalQuotes
             : 0,
         };

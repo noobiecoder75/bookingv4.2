@@ -1,29 +1,28 @@
 'use client';
 
 import { useQuoteStore } from '@/store/quote-store';
+import { useInvoiceStore } from '@/store/invoice-store';
 import { formatCurrency } from '@/lib/utils';
-import { FileText, Send, CheckCircle, XCircle, DollarSign, TrendingUp } from 'lucide-react';
+import { FileText, Send, CheckCircle, XCircle, DollarSign, TrendingUp, Briefcase } from 'lucide-react';
 
 export function QuoteStats() {
   const { getQuotesStats } = useQuoteStore();
+  const { getTotalRevenue } = useInvoiceStore();
   const stats = getQuotesStats();
 
-  const statCards = [
+  // Get actual revenue from paid invoices instead of accepted quotes
+  const actualRevenue = getTotalRevenue();
+
+  // Quote status cards (row 1)
+  const quoteStatusCards = [
     {
       title: 'Total Quotes',
       value: stats.totalQuotes.toLocaleString(),
       icon: FileText,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
       description: 'All quotes created',
-    },
-    {
-      title: 'Draft Quotes',
-      value: stats.draftQuotes.toLocaleString(),
-      icon: FileText,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-50',
-      description: 'Work in progress',
     },
     {
       title: 'Sent Quotes',
@@ -31,6 +30,7 @@ export function QuoteStats() {
       icon: Send,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
       description: 'Awaiting response',
     },
     {
@@ -39,6 +39,7 @@ export function QuoteStats() {
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
+      borderColor: 'border-green-200',
       description: 'Confirmed bookings',
     },
     {
@@ -47,23 +48,45 @@ export function QuoteStats() {
       icon: XCircle,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
+      borderColor: 'border-red-200',
       description: 'Declined proposals',
     },
+  ];
+
+  // Financial metrics cards (row 2)
+  const financialCards = [
     {
-      title: 'Total Revenue',
-      value: formatCurrency(stats.totalRevenue),
+      title: 'Actual Revenue',
+      value: formatCurrency(actualRevenue),
       icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      gradient: 'from-emerald-500 to-green-600',
+      description: 'From paid invoices',
+      isFinancial: true,
+    },
+    {
+      title: 'Pipeline Value',
+      value: formatCurrency(stats.totalRevenue),
+      icon: Briefcase,
+      gradient: 'from-purple-500 to-indigo-600',
       description: 'From accepted quotes',
+      isFinancial: true,
     },
     {
       title: 'Average Quote Value',
       value: formatCurrency(stats.averageQuoteValue),
       icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      gradient: 'from-blue-500 to-cyan-600',
       description: 'Across all quotes',
+      isFinancial: true,
+    },
+    {
+      title: 'Draft Quotes',
+      value: stats.draftQuotes.toLocaleString(),
+      icon: FileText,
+      color: 'text-gray-600',
+      bgColor: 'bg-gray-50',
+      borderColor: 'border-gray-200',
+      description: 'Work in progress',
     },
   ];
 
@@ -74,28 +97,57 @@ export function QuoteStats() {
 
   return (
     <div className="space-y-6">
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-        {statCards.map((stat, index) => (
+      {/* Quote Status Cards - Row 1 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {quoteStatusCards.map((stat) => (
           <div
             key={stat.title}
-            className={`bg-white rounded-lg p-4 border border-gray-200 hover:shadow-sm transition-shadow ${
-              index >= 4 ? 'sm:col-span-2 lg:col-span-1' : ''
-            }`}
+            className={`bg-white rounded-xl p-6 border-2 ${stat.borderColor} hover:shadow-lg hover:-translate-y-1 transition-all duration-200`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm font-medium text-gray-700">{stat.title}</p>
-                  <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
-                </div>
+            <div className="flex items-start justify-between">
+              <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                <stat.icon className={`w-6 h-6 ${stat.color}`} />
               </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-sm font-semibold text-gray-700 mt-1">{stat.title}</p>
+              <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Financial Metrics Cards - Row 2 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {financialCards.map((stat) => (
+          <div
+            key={stat.title}
+            className={`${
+              stat.isFinancial
+                ? `bg-gradient-to-br ${stat.gradient} text-white`
+                : `bg-white border-2 ${stat.borderColor}`
+            } rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-200`}
+          >
+            <div className="flex items-start justify-between">
+              <div className={`p-3 rounded-xl ${
+                stat.isFinancial ? 'bg-white/20' : stat.bgColor
+              }`}>
+                <stat.icon className={`w-6 h-6 ${
+                  stat.isFinancial ? 'text-white' : stat.color
+                }`} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className={`text-3xl font-bold ${
+                stat.isFinancial ? 'text-white' : 'text-gray-900'
+              }`}>{stat.value}</p>
+              <p className={`text-sm font-semibold mt-1 ${
+                stat.isFinancial ? 'text-white/90' : 'text-gray-700'
+              }`}>{stat.title}</p>
+              <p className={`text-xs mt-1 ${
+                stat.isFinancial ? 'text-white/70' : 'text-gray-500'
+              }`}>{stat.description}</p>
             </div>
           </div>
         ))}

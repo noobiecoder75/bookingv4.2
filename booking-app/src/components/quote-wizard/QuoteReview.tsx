@@ -98,11 +98,20 @@ export function QuoteReview({ quote, contact, onComplete }: QuoteReviewProps) {
               Travel: {formatDate(currentQuote.travelDates.start)} - {formatDate(currentQuote.travelDates.end)}
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-right space-y-1">
+            <div className="flex items-center justify-end space-x-3 text-xs text-gray-600">
+              <span>Cost: {formatCurrency(currentQuote.items.reduce((sum, item) => sum + (item.supplierCost || item.price * 0.80), 0))}</span>
+              <span className="text-green-600 font-medium">
+                +Markup: {formatCurrency(currentQuote.items.reduce((sum, item) => {
+                  const supplierCost = item.supplierCost || item.price * 0.80;
+                  return sum + (item.price - supplierCost);
+                }, 0))}
+              </span>
+            </div>
             <div className="text-2xl font-bold text-blue-600">
               {formatCurrency(currentQuote.totalCost)}
             </div>
-            <div className="text-sm text-gray-500">Total Quote</div>
+            <div className="text-sm text-gray-500">Client Total</div>
           </div>
         </div>
       </div>
@@ -154,8 +163,13 @@ export function QuoteReview({ quote, contact, onComplete }: QuoteReviewProps) {
                   <div className="font-semibold text-gray-900">
                     {formatCurrency(item.price * item.quantity)}
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {formatCurrency(item.price)} each
+                  <div className="text-xs text-gray-500 space-y-0.5">
+                    <div>{formatCurrency(item.price)} each</div>
+                    {item.supplierCost && (
+                      <div className="text-green-600">
+                        +{formatCurrency(item.price - item.supplierCost)} markup
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
