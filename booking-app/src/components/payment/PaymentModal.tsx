@@ -48,12 +48,6 @@ export function PaymentModal({ quote, isOpen, onClose, onSuccess }: PaymentModal
     setIsLoading(true);
     setError(null);
 
-    console.log('🔵 [PaymentModal] Initiating payment...', {
-      quoteId: quote.id,
-      paymentType,
-      totalCost: quote.totalCost
-    });
-
     try {
       const response = await fetch('/api/payments/create-payment-intent', {
         method: 'POST',
@@ -69,28 +63,17 @@ export function PaymentModal({ quote, isOpen, onClose, onSuccess }: PaymentModal
 
       const data = await response.json();
 
-      console.log('✅ [PaymentModal] Response received:', {
-        status: response.status,
-        hasClientSecret: !!data.clientSecret,
-        hasError: !!data.error
-      });
-
       if (response.status === 409) {
-        // Price changed!
-        console.log('⚠️ [PaymentModal] Price changed detected');
         setPriceChangeWarning(data);
         setIsLoading(false);
       } else if (data.clientSecret) {
-        console.log('✅ [PaymentModal] Client secret received, showing payment form');
         setClientSecret(data.clientSecret);
         setIsLoading(false);
       } else {
-        console.error('❌ [PaymentModal] Error:', data.error);
         setError(data.error || 'Failed to initialize payment');
         setIsLoading(false);
       }
     } catch (err: any) {
-      console.error('❌ [PaymentModal] Network error:', err);
       setError(err.message || 'Network error');
       setIsLoading(false);
     }
@@ -247,17 +230,13 @@ function PaymentForm({ quote, quoteId, onSuccess, onError }: PaymentFormProps) {
     e.preventDefault();
 
     if (!stripe || !elements) {
-      console.warn('⚠️ [PaymentForm] Stripe or Elements not ready');
       return;
     }
 
     if (!isElementReady) {
-      console.warn('⚠️ [PaymentForm] PaymentElement not ready yet');
       onError('Payment form is still loading, please wait...');
       return;
     }
-
-    console.log('🔵 [PaymentForm] Submitting payment...');
 
     setIsProcessing(true);
     onError('');
@@ -269,15 +248,12 @@ function PaymentForm({ quote, quoteId, onSuccess, onError }: PaymentFormProps) {
       });
 
       if (submitError) {
-        console.error('❌ [PaymentForm] Stripe error:', submitError.message);
         onError(submitError.message ?? 'Payment failed');
         setIsProcessing(false);
         return;
       }
 
       if (paymentIntent && paymentIntent.status === 'succeeded') {
-        console.log('✅ [PaymentForm] Payment succeeded:', paymentIntent.id);
-
         // Confirm payment on backend
         const response = await fetch('/api/payments/confirm-payment', {
           method: 'POST',
@@ -291,10 +267,7 @@ function PaymentForm({ quote, quoteId, onSuccess, onError }: PaymentFormProps) {
 
         const data = await response.json();
 
-        console.log('✅ [PaymentForm] Confirmation response:', data);
-
         if (data.success) {
-          console.log('🎉 [PaymentForm] Payment completed successfully!');
           // Pass payment confirmation data back to parent
           const paymentData: PaymentConfirmationData = {
             paymentId: data.paymentId,
@@ -307,12 +280,10 @@ function PaymentForm({ quote, quoteId, onSuccess, onError }: PaymentFormProps) {
           };
           onSuccess(paymentData);
         } else {
-          console.error('❌ [PaymentForm] Confirmation failed:', data.error);
           onError(data.error || 'Payment confirmation failed');
         }
       }
     } catch (err: any) {
-      console.error('❌ [PaymentForm] Processing error:', err);
       onError(err.message || 'Payment processing failed');
     } finally {
       setIsProcessing(false);
@@ -322,14 +293,8 @@ function PaymentForm({ quote, quoteId, onSuccess, onError }: PaymentFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
       <PaymentElement
-        onReady={() => {
-          console.log('✅ [PaymentForm] PaymentElement is ready');
-          setIsElementReady(true);
-        }}
-        onLoadError={(error) => {
-          console.error('❌ [PaymentForm] PaymentElement load error:', error);
-          onError('Failed to load payment form. Please refresh and try again.');
-        }}
+        onReady={() => setIsElementReady(true)}
+        onLoadError={() => onError('Failed to load payment form. Please refresh and try again.')}
       />
 
       {!isElementReady && (

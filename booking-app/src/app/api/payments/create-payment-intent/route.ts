@@ -16,33 +16,18 @@ export async function POST(request: NextRequest) {
       quote, // Pass full quote object from client
     } = body;
 
-    console.log('🔵 [Payment Intent] Request received:', { quoteId, paymentType, customerEmail });
-
     // Validate required fields
     if (!quoteId || !paymentType || !customerEmail || !quote) {
-      console.error('❌ [Payment Intent] Missing required fields');
       return NextResponse.json(
         { error: 'Missing required fields: quoteId, paymentType, customerEmail, quote' },
         { status: 400 }
       );
     }
 
-    console.log('✅ [Payment Intent] Quote data received:', {
-      quoteId: quote.id,
-      totalCost: quote.totalCost,
-      itemCount: quote.items?.length
-    });
-
     // **CRITICAL: Reprice API items before creating payment intent**
-    console.log('🔄 [Payment Intent] Repricing quote...');
     const repriceResult = await repriceQuote(quote);
 
     if (repriceResult.priceChanged) {
-      console.log('⚠️ [Payment Intent] Price changed detected:', {
-        original: quote.totalCost,
-        new: repriceResult.newTotalCost,
-        difference: repriceResult.newTotalCost - quote.totalCost
-      });
       // Price has changed - return 409 Conflict with details
       return NextResponse.json(
         {
@@ -58,27 +43,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ [Payment Intent] No price changes detected');
-
     // Calculate payment amount
     let paymentAmount = quote.totalCost;
     if (paymentType === 'deposit') {
       paymentAmount = calculateDepositAmount(quote.totalCost);
     }
 
-    console.log('💰 [Payment Intent] Payment amount:', {
-      type: paymentType,
-      totalCost: quote.totalCost,
-      paymentAmount,
-      formatted: formatAmountForStripe(paymentAmount)
-    });
-
     const stripe = getStripeInstance();
 
     // Create or retrieve Stripe Customer
     let customer = null;
     try {
-      console.log('👤 [Payment Intent] Creating Stripe customer...');
       // In production, check if customer exists in DB and retrieve their Stripe ID
       // For now, create new customer each time
       customer = await stripe.customers.create({
@@ -88,9 +63,7 @@ export async function POST(request: NextRequest) {
           customerId: customerId || 'guest',
         },
       });
-      console.log('✅ [Payment Intent] Stripe customer created:', customer.id);
     } catch (error: any) {
-      console.error('❌ [Payment Intent] Failed to create Stripe customer:', error);
       return NextResponse.json(
         { error: 'Failed to create customer account' },
         { status: 500 }
@@ -99,7 +72,6 @@ export async function POST(request: NextRequest) {
 
     // Create Payment Intent
     try {
-      console.log('💳 [Payment Intent] Creating payment intent...');
       const paymentIntent = await stripe.paymentIntents.create({
         amount: formatAmountForStripe(paymentAmount),
         currency: 'usd',
@@ -116,12 +88,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      console.log('✅ [Payment Intent] Created successfully:', {
-        id: paymentIntent.id,
-        amount: paymentIntent.amount,
-        status: paymentIntent.status
-      });
-
       return NextResponse.json({
         success: true,
         clientSecret: paymentIntent.client_secret,
@@ -130,7 +96,6 @@ export async function POST(request: NextRequest) {
         paymentType,
       });
     } catch (error: any) {
-      console.error('❌ [Payment Intent] Failed to create payment intent:', error);
       return NextResponse.json(
         { error: 'Failed to create payment intent: ' + error.message },
         { status: 500 }

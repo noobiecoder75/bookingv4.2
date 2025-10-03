@@ -52,8 +52,6 @@ export async function processHybridBooking(
   quote: Quote,
   paymentId: string
 ): Promise<BookingResult> {
-  console.log(`🎯 [Booking Processor] Processing hybrid booking for quote: ${quote.id}`);
-
   const result: BookingResult = {
     success: false,
     apiBookings: [],
@@ -68,8 +66,6 @@ export async function processHybridBooking(
 
   // Split items by source
   const { apiItems, offlineItems } = splitItemsBySource(quote.items);
-
-  console.log(`📊 [Booking Processor] Split: ${apiItems.length} API items, ${offlineItems.length} offline items`);
 
   // Process API items (auto-booking)
   for (const item of apiItems) {
@@ -97,7 +93,6 @@ export async function processHybridBooking(
         result.summary.manualTasks++;
       }
     } catch (error: any) {
-      console.error(`❌ [Booking Processor] API booking failed for item ${item.id}:`, error);
       result.apiBookings.push({
         itemId: item.id,
         status: 'failed',
@@ -123,8 +118,6 @@ export async function processHybridBooking(
   result.success =
     result.summary.apiSuccess > 0 ||
     result.summary.manualTasks > 0;
-
-  console.log(`✅ [Booking Processor] Completed:`, result.summary);
 
   return result;
 }
@@ -156,8 +149,6 @@ async function bookAPIItem(
   item: QuoteItem,
   quote: Quote
 ): Promise<{ success: boolean; confirmationNumber?: string; error?: string }> {
-  console.log(`🔄 [API Booking] Booking ${item.supplierSource} item: ${item.name}`);
-
   // Route to appropriate API based on source
   switch (item.supplierSource) {
     case 'api_hotelbeds':
@@ -195,8 +186,6 @@ async function bookHotelBedsItem(
       remark: `Booking for quote ${quote.id}`,
     };
 
-    console.log('📤 [HotelBeds] Calling booking API...');
-
     // Call our HotelBeds booking endpoint
     const response = await fetch('/api/bookings/hotel', {
       method: 'POST',
@@ -207,8 +196,6 @@ async function bookHotelBedsItem(
     const data = await response.json();
 
     if (data.success) {
-      console.log('✅ [HotelBeds] Booking successful:', data.bookingConfirmation?.confirmationNumber);
-
       // Auto-create supplier expense after successful booking
       await createSupplierExpense(item, quote);
 
@@ -217,14 +204,12 @@ async function bookHotelBedsItem(
         confirmationNumber: data.bookingConfirmation?.confirmationNumber,
       };
     } else {
-      console.error('❌ [HotelBeds] Booking failed:', data.error);
       return {
         success: false,
         error: data.error,
       };
     }
   } catch (error: any) {
-    console.error('❌ [HotelBeds] Exception:', error);
     return {
       success: false,
       error: error.message,
@@ -239,7 +224,6 @@ async function bookAmadeusItem(
   item: QuoteItem,
   quote: Quote
 ): Promise<{ success: boolean; confirmationNumber?: string; error?: string }> {
-  console.log('⚠️ [Amadeus] API not yet implemented - creating manual task');
   return {
     success: false,
     error: 'Amadeus API not yet implemented',
@@ -253,7 +237,6 @@ async function bookSabreItem(
   item: QuoteItem,
   quote: Quote
 ): Promise<{ success: boolean; confirmationNumber?: string; error?: string }> {
-  console.log('⚠️ [Sabre] API not yet implemented - creating manual task');
   return {
     success: false,
     error: 'Sabre API not yet implemented',
@@ -266,8 +249,6 @@ async function bookSabreItem(
 function createManualBookingTasks(item: QuoteItem, quote: Quote): string[] {
   const taskStore = useTaskStore.getState();
 
-  console.log(`📝 [Task Creation] Creating manual tasks for: ${item.name}`);
-
   const taskIds = taskStore.generateTasksFromQuoteItem({
     id: item.id,
     quoteId: quote.id,
@@ -278,8 +259,6 @@ function createManualBookingTasks(item: QuoteItem, quote: Quote): string[] {
     customerId: quote.customerId,
     customerName: quote.customerName,
   });
-
-  console.log(`✅ [Task Creation] Created ${taskIds.length} tasks`);
 
   return taskIds;
 }
@@ -316,15 +295,7 @@ async function createSupplierExpense(item: QuoteItem, quote: Quote): Promise<voi
     };
 
     const expenseId = useExpenseStore.getState().createExpense(expense);
-
-    console.log(`💵 [Expense] Created supplier expense:`, {
-      expenseId,
-      amount: supplierCost,
-      vendor: expense.vendor,
-      bookingId: quote.id,
-    });
   } catch (error: any) {
-    console.error(`❌ [Expense] Failed to create supplier expense:`, error);
     // Don't throw - expense creation failure shouldn't block booking
   }
 }
